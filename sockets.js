@@ -147,8 +147,8 @@ if (cluster.isMaster) {
 	try {
 		(function () {
 			var nodestatic = require('node-static');
-			var cssserver = new nodestatic.Server('./config');
-			var avatarserver = new nodestatic.Server('./config/avatars');
+			var cssserver = new nodestatic.Server(DATA_DIR);
+			var avatarserver = new nodestatic.Server(DATA_DIR + avatars);
 			var staticserver = new nodestatic.Server('./static');
 			var staticRequestHandler = function (request, response) {
 				request.resume();

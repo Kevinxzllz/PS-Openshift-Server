@@ -47,6 +47,11 @@
 // Make sure our dependencies are available, and install them if they
 // aren't
 
+/* ----------------Data-Directory------------*/
+global.DATA_DIR = (process.env.OPENSHIFT_DATA_DIR) ? process.env.OPENSHIFT_DATA_DIR : './config/';
+global.LOGS_DIR = (process.env.OPENSHIFT_DATA_DIR) ? (process.env.OPENSHIFT_DATA_DIR + 'logs/') : './logs/';
+/* ------------------------------------------*/
+
 function runNpm(command) {
 	if (require.main !== module) throw new Error("Dependencies unmet");
 
@@ -79,6 +84,17 @@ if (!fs.existsSync('./config/config.js')) {
 	fs.writeFileSync('./config/config.js',
 		fs.readFileSync('./config/config-example.js')
 	);
+}
+
+if (fs.existsSync(DATA_DIR + "avatars/")) {
+	fs.mkdirSync(DATA_DIR + "avatars/");
+}
+
+if (fs.existsSync(LOGS_DIR) {
+	fs.mkdirSync(LOGS_DIR);
+	fs.mkdirSync(LOGS_DIR + 'chat/');
+	fs.mkdirSync(LOGS_DIR + 'modlog/');
+	fs.mkdirSync(LOGS_DIR + 'repl/');
 }
 
 /*********************************************************

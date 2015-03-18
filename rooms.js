@@ -104,12 +104,12 @@ var GlobalRoom = (function () {
 		// but this is okay to prevent race conditions as we start up PS
 		this.lastBattle = 0;
 		try {
-			this.lastBattle = parseInt(fs.readFileSync('logs/lastbattle.txt')) || 0;
+			this.lastBattle = parseInt(fs.readFileSync(LOGS_DIR + 'lastbattle.txt')) || 0;
 		} catch (e) {} // file doesn't exist [yet]
 
 		this.chatRoomData = [];
 		try {
-			this.chatRoomData = JSON.parse(fs.readFileSync('config/chatrooms.json'));
+			this.chatRoomData = JSON.parse(fs.readFileSync(DATA_DIR + 'chatrooms.json'));
 			if (!Array.isArray(this.chatRoomData)) this.chatRoomData = [];
 		} catch (e) {} // file doesn't exist [yet]
 
@@ -167,12 +167,12 @@ var GlobalRoom = (function () {
 				lastBattle = self.lastBattle + 10;
 
 				writing = true;
-				fs.writeFile('logs/lastbattle.txt.0', '' + lastBattle, function () {
+				fs.writeFile(LOGS_DIR + 'lastbattle.txt.0', '' + lastBattle, function () {
 					// rename is atomic on POSIX, but will throw an error on Windows
-					fs.rename('logs/lastbattle.txt.0', 'logs/lastbattle.txt', function (err) {
+					fs.rename(LOGS_DIR + 'lastbattle.txt.0', LOGS_DIR + 'lastbattle.txt', function (err) {
 						if (err) {
 							// This should only happen on Windows.
-							fs.writeFile('logs/lastbattle.txt', '' + lastBattle, finishWriting);
+							fs.writeFile(LOGS_DIR + 'lastbattle.txt', '' + lastBattle, finishWriting);
 							return;
 						}
 						finishWriting();
@@ -198,12 +198,12 @@ var GlobalRoom = (function () {
 				}
 				writing = true;
 				var data = JSON.stringify(self.chatRoomData).replace(/\{"title"\:/g, '\n{"title":').replace(/\]$/, '\n]');
-				fs.writeFile('config/chatrooms.json.0', data, function () {
+				fs.writeFile(DATA_DIR + 'chatrooms.json.0', data, function () {
 					// rename is atomic on POSIX, but will throw an error on Windows
-					fs.rename('config/chatrooms.json.0', 'config/chatrooms.json', function (err) {
+					fs.rename(DATA_DIR + 'chatrooms.json.0', DATA_DIR + 'chatrooms.json', function (err) {
 						if (err) {
 							// This should only happen on Windows.
-							fs.writeFile('config/chatrooms.json', data, finishWriting);
+							fs.writeFile(DATA_DIR + 'chatrooms.json', data, finishWriting);
 							return;
 						}
 						finishWriting();
@@ -575,7 +575,7 @@ var GlobalRoom = (function () {
 		}
 		if (Config.logladderip && options.rated) {
 			if (!this.ladderIpLog) {
-				this.ladderIpLog = fs.createWriteStream('logs/ladderip/ladderip.txt', {flags: 'a'});
+				this.ladderIpLog = fs.createWriteStream(LOGS_DIR + 'ladderip/ladderip.txt', {flags: 'a'});
 			}
 			this.ladderIpLog.write(p1.userid + ': ' + p1.latestIp + '\n');
 			this.ladderIpLog.write(p2.userid + ': ' + p2.latestIp + '\n');
@@ -827,7 +827,7 @@ var BattleRoom = (function () {
 		var date = new Date();
 		var logfolder = date.format('{yyyy}-{MM}');
 		var logsubfolder = date.format('{yyyy}-{MM}-{dd}');
-		var curpath = 'logs/' + logfolder;
+		var curpath = LOGS_DIR + logfolder;
 		var self = this;
 		fs.mkdir(curpath, '0755', function () {
 			var tier = self.format.toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -1288,7 +1288,7 @@ var ChatRoom = (function () {
 			callback();
 		} : fs.mkdir;
 		var date = new Date();
-		var basepath = 'logs/chat/' + this.id + '/';
+		var basepath = LOGS_DIR + 'chat/' + this.id + '/';
 		var self = this;
 		mkdir(basepath, '0755', function () {
 			var path = date.format('{yyyy}-{MM}');
