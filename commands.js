@@ -1607,7 +1607,9 @@ var commands = exports.commands = {
 
 	'memusage': 'memoryusage',
 	memoryusage: function (target) {
-		if (!this.can('hotpatch')) return false;
+		if (!user.hasConsoleAccess(connection)) {
+			return this.sendReply("/memoryusage - Access denied.");
+		}
 		target = toId(target) || 'all';
 		if (target === 'all') {
 			this.sendReply("Loading memory usage, this might take a while.");

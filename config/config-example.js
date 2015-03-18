@@ -123,7 +123,7 @@ exports.consoleips = ['127.0.0.1'];
 // then the config.js file will be reloaded when it is changed.
 // This can be used to change some settings using a text editor on
 // the server.
-exports.watchconfig = true;
+exports.watchconfig = false;
 
 // logchat - whether to log chat rooms.
 exports.logchat = false;
@@ -232,6 +232,7 @@ exports.groups = {
 		disableladder: true,
 		globalonly: true,
 		tournamentsmanagement: true,
+		hpl: true,
 		rank: 6
 	},
 	'#': {
