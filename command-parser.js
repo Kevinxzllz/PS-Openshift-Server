@@ -53,7 +53,7 @@ fs.readdirSync('./chat-plugins').forEach(function (file) {
  * Parser
  *********************************************************/
 
-var modlog = exports.modlog = {lobby: fs.createWriteStream('logs/modlog/modlog_lobby.txt', {flags:'a+'}), battle: fs.createWriteStream('logs/modlog/modlog_battle.txt', {flags:'a+'})};
+var modlog = exports.modlog = {lobby: fs.createWriteStream(LOGS_DIR + 'modlog/modlog_lobby.txt', {flags:'a+'}), battle: fs.createWriteStream(LOGS_DIR +'modlog/modlog_battle.txt', {flags:'a+'})};
 
 /**
  * Can this user talk?
@@ -287,7 +287,7 @@ var parse = exports.parse = function (message, room, user, connection, levelsDee
 					if (room.battle) {
 						modlog[room.id] = modlog['battle'];
 					} else {
-						modlog[room.id] = fs.createWriteStream('logs/modlog/modlog_' + room.id + '.txt', {flags:'a+'});
+						modlog[room.id] = fs.createWriteStream(LOGS_DIR + 'modlog/modlog_' + room.id + '.txt', {flags:'a+'});
 					}
 				}
 				modlog[room.id].write('[' + (new Date().toJSON()) + '] (' + room.id + ') ' + result + '\n');

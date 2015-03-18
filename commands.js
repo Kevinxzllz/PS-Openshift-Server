@@ -1221,7 +1221,7 @@ var commands = exports.commands = {
 		var hideIps = !user.can('ban');
 		var path = require('path');
 		var isWin = process.platform === 'win32';
-		var logPath = 'logs/modlog/';
+		var logPath = LOGS_DIR + 'modlog/';
 
 		if (target.indexOf(',') > -1) {
 			var targets = target.split(',');
@@ -1244,7 +1244,7 @@ var commands = exports.commands = {
 			if (!this.can('modlog')) return;
 			roomNames = "all rooms";
 			// Get a list of all the rooms
-			var fileList = fs.readdirSync('logs/modlog');
+			var fileList = fs.readdirSync(LOGS_DIR + 'modlog/');
 			for (var i = 0; i < fileList.length; ++i) {
 				filename += path.normalize(__dirname + '/' + logPath + fileList[i]) + ' ';
 			}
