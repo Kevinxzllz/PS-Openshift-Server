@@ -13,6 +13,7 @@
 
 var cluster = require('cluster');
 global.Config = require('./config/config');
+global.DATA_DIR = (process.env.OPENSHIFT_DATA_DIR) ? process.env.OPENSHIFT_DATA_DIR : './config/';
 
 if (cluster.isMaster) {
 	cluster.setupMaster({
@@ -148,7 +149,7 @@ if (cluster.isMaster) {
 		(function () {
 			var nodestatic = require('node-static');
 			var cssserver = new nodestatic.Server(DATA_DIR);
-			var avatarserver = new nodestatic.Server(DATA_DIR + avatars);
+			var avatarserver = new nodestatic.Server(DATA_DIR + 'avatars');
 			var staticserver = new nodestatic.Server('./static');
 			var staticRequestHandler = function (request, response) {
 				request.resume();
@@ -182,7 +183,8 @@ if (cluster.isMaster) {
 			}
 		})();
 	} catch (e) {
-		console.log('Could not start node-static - try `npm install` if you want to use it');
+		var sys = require('sys');
+		console.log('Could not start node-static: ' + sys.inspect(e));
 	}
 
 	// SockJS server

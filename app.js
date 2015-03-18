@@ -90,7 +90,7 @@ if (!fs.existsSync(DATA_DIR + "avatars/")) {
 	fs.mkdirSync(DATA_DIR + "avatars/");
 }
 
-if (!fs.existsSync(LOGS_DIR) {
+if (!fs.existsSync(LOGS_DIR)) {
 	fs.mkdirSync(LOGS_DIR);
 	fs.mkdirSync(LOGS_DIR + 'chat/');
 	fs.mkdirSync(LOGS_DIR + 'modlog/');
