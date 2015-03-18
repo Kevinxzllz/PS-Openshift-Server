@@ -288,12 +288,12 @@ var GlobalRoom = (function () {
 		}
 		return roomList;
 	};
-	GlobalRoom.prototype.getRooms = function () {
+	GlobalRoom.prototype.getRooms = function (user) {
 		var roomsData = {official:[], chat:[], userCount: this.userCount, battleCount: this.battleCount};
 		for (var i = 0; i < this.chatRooms.length; i++) {
 			var room = this.chatRooms[i];
 			if (!room) continue;
-			if (room.isPrivate) continue;
+			if (room.isPrivate && !(room.isPrivate === 'voice' && user.group !== ' ')) continue;
 			(room.isOfficial ? roomsData.official : roomsData.chat).push({
 				title: room.title,
 				desc: room.desc,
@@ -303,27 +303,26 @@ var GlobalRoom = (function () {
 		return roomsData;
 	};
 	GlobalRoom.prototype.cancelSearch = function (user) {
-		var success = false;
 		user.cancelChallengeTo();
+		if (!user.searching) return false;
 		for (var i = 0; i < this.searchers.length; i++) {
 			var search = this.searchers[i];
 			var searchUser = Users.get(search.userid);
+			if (!searchUser || searchUser === user) {
+				this.searchers.splice(i, 1);
+				i--;
+				continue;
+			}
 			if (!searchUser.connected) {
 				this.searchers.splice(i, 1);
 				i--;
-				continue;
-			}
-			if (searchUser === user) {
-				this.searchers.splice(i, 1);
-				i--;
-				if (!success) {
-					searchUser.send('|updatesearch|' + JSON.stringify({searching: false}));
-					success = true;
-				}
+				searchUser.searching = 0;
 				continue;
 			}
 		}
-		return success;
+		user.searching = 0;
+		user.send('|updatesearch|' + JSON.stringify({searching: false}));
+		return true;
 	};
 	GlobalRoom.prototype.searchBattle = function (user, formatid) {
 		if (!user.connected) return;
@@ -399,6 +398,7 @@ var GlobalRoom = (function () {
 				return;
 			}
 		}
+		user.searching++;
 		this.searchers.push(newSearch);
 	};
 	GlobalRoom.prototype.send = function (message, user) {
@@ -760,6 +760,10 @@ var BattleRoom = (function () {
 			}
 			this.update();
 			this.logBattle(p1score);
+		}
+		if (Config.autosavereplays) {
+			var winninguser = Users.get(winnerid);
+			CommandParser.parse('/savereplay', this, winninguser, winninguser.connections[0]);
 		}
 		if (this.tour) {
 			var winnerid = toId(winner);

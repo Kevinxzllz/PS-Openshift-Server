@@ -28,7 +28,6 @@ const THROTTLE_BUFFER_LIMIT = 6;
 const THROTTLE_MULTILINE_WARN = 4;
 
 var fs = require('fs');
-var dns = require('dns');
 
 /* global Users: true */
 var Users = module.exports = getUser;
@@ -285,7 +284,7 @@ Users.socketConnect = function (worker, workerid, socketid, ip) {
 		}
 	});
 
-	dns.reverse(ip, function (err, hosts) {
+	Dnsbl.reverse(ip, function (err, hosts) {
 		if (hosts && hosts[0]) {
 			user.latestHost = hosts[0];
 			if (Config.hostfilter) Config.hostfilter(hosts[0], user, connection);
@@ -303,8 +302,6 @@ Users.socketConnect = function (worker, workerid, socketid, ip) {
 		}
 	});
 
-	user.joinRoom('global', connection);
-
 	Dnsbl.query(connection.ip, function (isBlocked) {
 		if (isBlocked) {
 			connection.popup("Your IP is known for spamming or hacking websites and has been locked. If you're using a proxy, don't.");
@@ -314,6 +311,8 @@ Users.socketConnect = function (worker, workerid, socketid, ip) {
 			}
 		}
 	});
+
+	user.joinRoom('global', connection);
 };
 
 Users.socketDisconnect = function (worker, workerid, socketid) {
@@ -479,7 +478,8 @@ User = (function () {
 		this.battles = {};
 		this.roomCount = {};
 
-		// challenges
+		// searches and challenges
+		this.searching = 0;
 		this.challengesFrom = {};
 		this.challengeTo = null;
 		this.lastChallenge = 0;
@@ -672,6 +672,8 @@ User = (function () {
 
 			// also MMR is different for each userid
 			this.mmrCache = {};
+
+			Rooms.global.cancelSearch(this);
 		}
 
 		if (authenticated && userid in bannedUsers) {
@@ -985,6 +987,7 @@ User = (function () {
 				user.isSysop = isSysop;
 				user.forceRenamed = false;
 				if (avatar) user.avatar = avatar;
+				if (user.ignorePMs && user.can('lock') && !user.can('bypassall')) user.ignorePMs = false;
 
 				user.authenticated = authenticated;
 
@@ -1009,6 +1012,7 @@ User = (function () {
 			this.isStaff = (this.group in {'%':1, '@':1, '&':1, '~':1});
 			this.isSysop = isSysop;
 			if (avatar) this.avatar = avatar;
+			if (this.ignorePMs && this.can('lock') && !this.can('bypassall')) this.ignorePMs = false;
 			if (this.forceRename(name, authenticated)) {
 				Rooms.global.checkAutojoin(this);
 				return true;
@@ -1035,6 +1039,12 @@ User = (function () {
 		for (var i in connection.rooms) {
 			var room = connection.rooms[i];
 			if (!this.roomCount[i]) {
+				if (room.bannedUsers && this.userid in room.bannedUsers) {
+					room.bannedIps[connection.ip] = room.bannedUsers[this.userid];
+					connection.sendTo(room.id, '|deinit');
+					connection.leaveRoom(room);
+					continue;
+				}
 				room.onJoin(this, connection, true);
 				this.roomCount[i] = 0;
 			}

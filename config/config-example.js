@@ -41,16 +41,14 @@ exports.loginserverpublickey = "-----BEGIN RSA PUBLIC KEY-----\n" +
 	"-----END RSA PUBLIC KEY-----\n";
 
 // crashguardemail - if the server has been running for more than an hour
-// and crashes, send an email using these settings, rather than locking down
-// the server. Uncomment this definition if you want to use this feature;
-// otherwise, all crashes will lock down the server.
+//   and crashes, send an email using these settings, rather than locking down
+//   the server. Uncomment this definition if you want to use this feature;
+//   otherwise, all crashes will lock down the server.
 /**exports.crashguardemail = {
-	transport: 'SMTP',
 	options: {
 		host: 'mail.example.com',
 		port: 465,
-		secureConnection: true,
-		maxConnections: 1,
+		secure: true,
 		auth: {
 			user: 'example@domain.com',
 			pass: 'password'
@@ -253,9 +251,11 @@ exports.groups = {
 		name: "Player",
 		inherit: '+',
 		roomvoice: true,
+		roomplayer: true,
 		modchat: true,
 		roomonly: true,
 		privateroom: true,
+		joinbattle: true,
 		rank: 4
 	},
 	'@': {
@@ -290,6 +290,7 @@ exports.groups = {
 		receiveauthmessages: true,
 		tournamentsmoderation: true,
 		jeopardy: true,
+		joinbattle: true,
 		rank: 2
 	},
 	'+': {
@@ -297,7 +298,6 @@ exports.groups = {
 		name: "Voice",
 		inherit: ' ',
 		broadcast: true,
-		joinbattle: true,
 		rank: 1
 	},
 	' ': {

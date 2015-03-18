@@ -326,6 +326,15 @@ exports.BattleStatuses = {
 					}
 				}
 
+				// Prior to gen 5, these moves had no STAB and no effectiveness.
+				// This is done here and to moveData's type for two reasons:
+				// - modifyMove event happens before the moveHit function is run.
+				// - moveData here is different from move, as one is generated here and the other by the move itself.
+				// So here we centralise any future hit move getting typeless on hit as it should be.
+				if (this.gen < 5) {
+					posData.moveData.type = '???';
+				}
+
 				this.moveHit(target, posData.source, move, posData.moveData);
 
 				this.effectData.positions[i] = null;
@@ -368,13 +377,13 @@ exports.BattleStatuses = {
 		duration: 1,
 		onBasePowerPriority: 8,
 		onBasePower: function (basePower, user, target, move) {
-			var modifier = 4 / 3;
+			var modifier = 0x1547;
 			this.debug('Aura Boost');
 			if (user.volatiles['aurabreak']) {
-				modifier = 0.75;
+				modifier = 0x0C00;
 				this.debug('Aura Boost reverted by Aura Break');
 			}
-			return this.chainModify(modifier);
+			return this.chainModify([modifier, 0x1000]);
 		}
 	},
 

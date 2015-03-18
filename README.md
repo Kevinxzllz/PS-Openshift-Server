@@ -5,7 +5,11 @@ Navigation: [Website][1] | **Server repository** | [Client repository][2]
 
   [1]: http://pokemonshowdown.com/
   [2]: https://github.com/Zarel/Pokemon-Showdown-Client
-  
+
+[![Build Status](https://travis-ci.org/Zarel/Pokemon-Showdown.svg)](https://travis-ci.org/Zarel/Pokemon-Showdown)
+[![Dependency Status](https://david-dm.org/zarel/Pokemon-Showdown.svg)](https://david-dm.org/zarel/Pokemon-Showdown)
+[![devDependency Status](https://david-dm.org/zarel/Pokemon-Showdown/dev-status.svg)](https://david-dm.org/zarel/Pokemon-Showdown#info=devDependencies)
+
 Introduction
 ------------------------------------------------------------------------
 
@@ -36,7 +40,7 @@ This will set your command line's location to Pokémon Showdown's folder. You'll
 
 To install dependencies, run the command:
 
-    npm install
+    npm install --production
 
 Copy `config/config-example.js` into `config/config.js`, and edit as you please.
 
