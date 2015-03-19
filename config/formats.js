@@ -3841,7 +3841,7 @@ exports.Formats = [
 	{
 		name: "[Gen 5] Smogon Doubles",
 		section: 'BW2 Doubles',
-		column: 3,
+		column: 4,
 
 		mod: 'gen5',
 		gameType: 'doubles',
