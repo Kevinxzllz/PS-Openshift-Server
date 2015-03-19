@@ -61,5 +61,5 @@ if (!process.send) {
 		process.exit();
 	});
 
-	require('./repl.js').start('verifier', function (cmd) { return eval(cmd); });
+	//require('./repl.js').start('verifier', function (cmd) { return eval(cmd); });
 }
