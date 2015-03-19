@@ -65,7 +65,6 @@ var Room = (function () {
 			message = '|c:|' + (~~(Date.now() / 1000)) + '|' + message.substr(3);
 		}
 		this.log.push(message);
-		this.update();
 	};
 	Room.prototype.logEntry = function () {};
 	Room.prototype.addRaw = function (message) {

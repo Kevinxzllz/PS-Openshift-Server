@@ -1,10 +1,5 @@
 
 exports.commands = {
-	datadir: function (target) {
-		if (!this.can('hotpatch')) return false;
-		return this.sendReplyBox(DATA_DIR + "<br />" + LOGS_DIR);
-	},
-	
 	stafflist: 'authlist',
 	authlist: function (target, room, user, connection) {
 		var rankLists = {};
@@ -24,6 +19,7 @@ exports.commands = {
 
 		if (!buffer.length) {
 			buffer = "This server has no auth.";
+			return connection.popup("This server has no auth.");
 		}
 		connection.popup(buffer.join("\n\n"));
 	},

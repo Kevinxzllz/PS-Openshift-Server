@@ -1246,12 +1246,12 @@ var commands = exports.commands = {
 			// Get a list of all the rooms
 			var fileList = fs.readdirSync(LOGS_DIR + 'modlog/');
 			for (var i = 0; i < fileList.length; ++i) {
-				filename += path.normalize(__dirname + '/' + logPath + fileList[i]) + ' ';
+				filename += path.normalize(logPath + fileList[i]) + ' ';
 			}
 		} else {
 			if (!this.can('modlog', null, Rooms.get(roomId))) return;
 			roomNames = "the room " + roomId;
-			filename = path.normalize(__dirname + '/' + logPath + 'modlog_' + roomId + '.txt');
+			filename = path.normalize(logPath + 'modlog_' + roomId + '.txt');
 		}
 
 		// Seek for all input rooms for the lines or text
@@ -1480,7 +1480,7 @@ var commands = exports.commands = {
 		this.logEntry(user.name + " used /endemergency");
 	},
 
-	kill: function (target, room, user) {
+	kill: function (target, room, user, connection) {
 		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/kill - Access denied.");}
 
 		if (Rooms.global.lockdown !== true) {
@@ -1606,7 +1606,7 @@ var commands = exports.commands = {
 	},
 
 	'memusage': 'memoryusage',
-	memoryusage: function (target) {
+	memoryusage: function (target, room, user, connection) {
 		if (!user.hasConsoleAccess(connection)) {
 			return this.sendReply("/memoryusage - Access denied.");
 		}
