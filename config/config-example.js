@@ -241,13 +241,8 @@ exports.grouplist = [
 		potd: true,
 		disableladder: true,
 		globalonly: true,
-<<<<<<< HEAD
 		tournamentsmanagement: true,
-		hpl: true,
 		rank: 6
-=======
-		tournamentsmanagement: true
->>>>>>> f05143c00f123c28466014f0d009f68eeb75d4ee
 	},
 	{
 		symbol: '#',
