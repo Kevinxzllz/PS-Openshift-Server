@@ -23,7 +23,7 @@ if (cluster.isMaster) {
 	var workers = exports.workers = {};
 
 	var spawnWorker = exports.spawnWorker = function () {
-		var worker = cluster.fork({PSPORT: Config.port, PSBINDADDR: Config.bindaddress || ''});
+		var worker = cluster.fork({PSPORT: Config.port, PSBINDADDR: Config.bindaddress || '', PSNOSSL: Config.ssl ? 0 : 1});
 		var id = worker.id;
 		workers[id] = worker;
 		worker.on('message', function (data) {
@@ -117,6 +117,7 @@ if (cluster.isMaster) {
 
 	if (process.env.PSPORT) Config.port = +process.env.PSPORT;
 	if (process.env.PSBINDADDR) Config.bindaddress = process.env.PSBINDADDR;
+	if (+process.env.PSNOSSL) Config.ssl = null;
 
 	// ofe is optional
 	// if installed, it will heap dump if the process runs out of memory
@@ -428,6 +429,7 @@ if (cluster.isMaster) {
 		});
 	});
 	server.installHandlers(app, {});
+	if (Config.bindaddress === '0.0.0.0') Config.bindaddress = undefined;
 	app.listen(Config.port, Config.bindaddress || undefined);
 	console.log('Worker ' + cluster.worker.id + ' now listening on ' + (Config.bindaddress || '*') + ':' + Config.port);
 
