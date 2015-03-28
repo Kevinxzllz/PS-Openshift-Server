@@ -78,22 +78,13 @@ if (isLegacyEngine && !new Map().set()) {
  * Load configuration
  *********************************************************/
 
-try {
-	global.Config = require('./config/config.js');
-} catch (err) {
-	if (err.code !== 'MODULE_NOT_FOUND') throw err;
 
-<<<<<<< HEAD
 // Synchronously, since it's needed before we can start the server
 //if (!fs.existsSync('./config/config.js')) {
-=======
-	// Copy it over synchronously from config-example.js since it's needed before we can start the server
->>>>>>> f05143c00f123c28466014f0d009f68eeb75d4ee
 	console.log("config.js doesn't exist - creating one with default settings...");
 	fs.writeFileSync('./config/config.js',
 		fs.readFileSync('./config/config-example.js')
 	);
-<<<<<<< HEAD
 //}
 
 if (!fs.existsSync(DATA_DIR + "avatars/")) {
@@ -105,10 +96,9 @@ if (!fs.existsSync(LOGS_DIR)) {
 	fs.mkdirSync(LOGS_DIR + 'chat/');
 	fs.mkdirSync(LOGS_DIR + 'modlog/');
 	fs.mkdirSync(LOGS_DIR + 'repl/');
-=======
-	global.Config = require('./config/config.js');
->>>>>>> f05143c00f123c28466014f0d009f68eeb75d4ee
 }
+
+global.Config = require('./config/config.js');
 
 if (Config.watchconfig) {
 	fs.watchFile('./config/config.js', function (curr, prev) {
