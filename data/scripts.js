@@ -227,23 +227,21 @@ exports.BattleScripts = {
 
 		// calculate true accuracy
 		var accuracy = move.accuracy;
-		var boost;
+		var boosts, boost;
 		if (accuracy !== true) {
-			var targetAbilityIgnoreAccuracy = !target.ignore['Ability'] && target.getAbility().ignoreAccuracy;
-			if (!move.ignoreAccuracy && !targetAbilityIgnoreAccuracy) {
-				boost = this.runEvent('ModifyBoost', pokemon, 'accuracy', null, pokemon.boosts.accuracy);
-				boost = this.clampIntRange(boost, -6, 6);
+			if (!move.ignoreAccuracy) {
+				boosts = this.runEvent('ModifyBoost', pokemon, null, null, Object.clone(this.boosts));
+				boost = this.clampIntRange(boosts['accuracy'], -6, 6);
 				if (boost > 0) {
 					accuracy *= boostTable[boost];
 				} else {
 					accuracy /= boostTable[-boost];
 				}
 			}
-			var pokemonAbilityIgnoreEvasion = !pokemon.ignore['Ability'] && pokemon.getAbility().ignoreEvasion;
-			if (!move.ignoreEvasion && !pokemonAbilityIgnoreEvasion) {
-				boost = this.runEvent('ModifyBoost', pokemon, 'evasion', null, target.boosts.evasion);
-				boost = this.clampIntRange(boost, -6, 6);
-				if (boost > 0 && !move.ignorePositiveEvasion) {
+			if (!move.ignoreEvasion) {
+				boosts = this.runEvent('ModifyBoost', pokemon, null, null, Object.clone(this.boosts));
+				boost = this.clampIntRange(boosts['evasion'], -6, 6);
+				if (boost > 0) {
 					accuracy /= boostTable[boost];
 				} else if (boost < 0) {
 					accuracy *= boostTable[-boost];
@@ -315,7 +313,7 @@ exports.BattleScripts = {
 			this.damage(this.clampIntRange(Math.round(totalDamage * move.recoil[0] / move.recoil[1]), 1), pokemon, target, 'recoil');
 		}
 
-		if (target && move.category !== 'Status') target.gotAttacked(move, damage, pokemon);
+		if (target && pokemon !== target) target.gotAttacked(move, damage, pokemon);
 
 		if (!damage && damage !== 0) return damage;
 
@@ -623,9 +621,7 @@ exports.BattleScripts = {
 	},
 	getTeam: function (side, team) {
 		var format = side.battle.getFormat();
-		if (format.team === 'random') {
-			return this.randomTeam(side);
-		} else if (typeof format.team === 'string' && format.team.substr(0, 6) === 'random') {
+		if (typeof format.team === 'string' && format.team.substr(0, 6) === 'random') {
 			return this[format.team + 'Team'](side);
 		} else if (team) {
 			return team;
@@ -1164,7 +1160,7 @@ exports.BattleScripts = {
 					if (!!counter['speedsetup'] || hasMove['encore'] || hasMove['raindance'] || hasMove['roar'] || hasMove['whirlwind']) rejected = true;
 					if (setupType && hasMove['stormthrow']) rejected = true;
 					break;
-				case 'defog': case 'pursuit': case 'haze': case 'healingwish': case 'rapidspin': case 'spikes': case 'stealthrock': case 'waterspout':
+				case 'defog': case 'pursuit': case 'haze': case 'healingwish': case 'rapidspin': case 'spikes': case 'waterspout':
 					if (setupType || !!counter['speedsetup'] || (hasMove['rest'] && hasMove['sleeptalk'])) rejected = true;
 					break;
 				case 'fakeout':
@@ -1182,6 +1178,9 @@ exports.BattleScripts = {
 				case 'protect':
 					if (setupType && (hasAbility['Guts'] || hasAbility['Speed Boost']) && !hasMove['batonpass']) rejected = true;
 					if (hasMove['rest'] && hasMove['sleeptalk']) rejected = true;
+					break;
+				case 'stealthrock':
+					if (setupType || !!counter['speedsetup'] || hasMove['rest']) rejected = true;
 					break;
 				case 'switcheroo': case 'trick':
 					if (setupType || counter.Physical + counter.Special < 2) rejected = true;
@@ -1270,6 +1269,9 @@ exports.BattleScripts = {
 					break;
 				case 'leafstorm':
 					if (setupType && hasMove['gigadrain']) rejected = true;
+					break;
+				case 'woodhammer':
+					if (hasMove['gigadrain']) rejected = true;
 					break;
 				case 'bonemerang': case 'precipiceblades':
 					if (hasMove['earthquake']) rejected = true;
@@ -1580,7 +1582,19 @@ exports.BattleScripts = {
 			if (abilities.indexOf('Unburden') > -1 && hasMove['acrobatics']) {
 				ability = 'Unburden';
 			}
-			if (template.id === 'combee') {
+			if (template.id === 'ambipom' && !counter['technician']) {
+				// If it doesn't qualify for Technician, Skill Link is useless on it
+				// Might as well give it Pickup just in case
+				ability = 'Pickup';
+			} else if (template.id === 'aurorus' && ability === 'Snow Warning' && hasMove['hypervoice']) {
+				for (var i = 0; i < moves.length; i++) {
+					if (moves[i] === 'hypervoice') {
+						moves[i] = 'blizzard';
+						counter['ate'] = 0;
+						break;
+					}
+				}
+			} else if (template.id === 'combee') {
 				// Combee always gets Hustle but its only physical move is Endeavor, which loses accuracy
 				ability = 'Honey Gather';
 			} else if (template.id === 'lopunny' && hasMove['switcheroo'] && this.random(3)) {
@@ -2427,6 +2441,9 @@ exports.BattleScripts = {
 				case 'leafstorm':
 					if (setupType && hasMove['gigadrain']) rejected = true;
 					break;
+				case 'woodhammer':
+					if (hasMove['gigadrain']) rejected = true;
+					break;
 				case 'weatherball':
 					if (!hasMove['sunnyday']) rejected = true;
 					break;
@@ -2755,6 +2772,8 @@ exports.BattleScripts = {
 				rejectAbility = !hasMove['sunnyday'];
 			} else if (ability in ateAbilities) {
 				rejectAbility = !counter['ate'];
+			} else if (ability === 'Unburden') {
+				rejectAbility = template.baseStats.spe > 120;
 			}
 
 			if (rejectAbility) {
@@ -2776,7 +2795,11 @@ exports.BattleScripts = {
 			if (abilities.indexOf('Intimidate') > -1 || template.id === 'mawilemega') {
 				ability = 'Intimidate';
 			}
-			if (template.id === 'unfezant') {
+			if (template.id === 'ambipom' && !counter['technician']) {
+				// If it doesn't qualify for Technician, Skill Link is useless on it
+				// Might as well give it Pickup just in case
+				ability = 'Pickup';
+			} else if (template.id === 'unfezant') {
 				ability = 'Super Luck';
 			}
 		}
@@ -3078,8 +3101,8 @@ exports.BattleScripts = {
 				evs: {hp:252, def:4, spd:252}, nature: 'Calm'
 			},
 			'&Okuu': {
-				species: 'Honchkrow', ability: 'Desolate Land', item: 'Life Orb', gender: 'F',
-				moves: ['sacredfire', ['bravebird', 'punishment', 'flamecharge'][this.random(3)], 'roost'],
+				species: 'Honchkrow', ability: 'Drought', item: 'Life Orb', gender: 'F',
+				moves: [['bravebird', 'sacredfire'][this.random(2)], ['suckerpunch', 'punishment'][this.random(2)], 'roost'],
 				baseSignatureMove: 'firespin', signatureMove: "Blazing Star - Ten Evil Stars",
 				evs: {atk:252, spa:4, spe:252}, nature: 'Quirky'
 			},
@@ -3120,7 +3143,7 @@ exports.BattleScripts = {
 				baseSignatureMove: 'pursuit', signatureMove: "Predator",
 				evs: {atk:252, def:4, spe: 252}, nature: 'Jolly'
 			},
-			'@Antemortem': {
+			'@antemortem': {
 				species: 'Clefable', ability: (variant === 1 ? 'Sheer Force' : 'Multiscale'), item: (variant === 1 ? 'Life Orb' : 'Leftovers'), gender: 'M',
 				moves: ['earthpower', 'cosmicpower', 'recover', 'gigadrain'],
 				baseSignatureMove: 'drainingkiss', signatureMove: "Postmortem",
@@ -3362,7 +3385,7 @@ exports.BattleScripts = {
 			},
 			'@Relados': {
 				species: 'Terrakion', ability: 'Guts', item: 'Flame Orb', gender: 'M',
-				moves: ['facade', 'diamondstorm', 'closecombat', 'iceshard', 'drainpunch'],
+				moves: ['knockoff', 'diamondstorm', 'closecombat', 'iceshard', 'drainpunch'],
 				baseSignatureMove: 'stockpile', signatureMove: "Loyalty",
 				evs: {atk:252, def:4, spe:252}, nature: 'Adamant'
 			},
@@ -3517,7 +3540,7 @@ exports.BattleScripts = {
 			'%Ast☆arA': {
 				species: 'Jirachi', ability: 'Cursed Body', item: ['Leftovers', 'Sitrus Berry'][this.random(2)], gender: 'F',
 				moves: ['psychic', 'moonblast', 'nastyplot', 'recover', 'surf'],
-				baseSignatureMove: 'lovelykiss', signatureMove: "Star Bolt Desperation",
+				baseSignatureMove: 'psywave', signatureMove: "Star Bolt Desperation",
 				evs: {hp:4, spa:252, spd:252}, nature: 'Modest'
 			},
 			'%Astyanax': {

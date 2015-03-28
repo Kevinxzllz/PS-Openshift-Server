@@ -104,8 +104,8 @@ exports.BattleScripts = {
 		if (!lockedMove && (!pokemon.volatiles['partialtrappinglock'] || pokemon.volatiles['partialtrappinglock'].locked !== target)) {
 			pokemon.deductPP(move, null, target);
 			// On gen 1 moves are stored when they are chosen and a PP is deducted.
-			pokemon.side.lastMove = move;
-			pokemon.lastMove = move;
+			pokemon.side.lastMove = move.id;
+			pokemon.lastMove = move.id;
 		}
 		this.useMove(move, pokemon, target, sourceEffect);
 		this.runEvent('AfterMove', target, pokemon, move);
@@ -280,8 +280,10 @@ exports.BattleScripts = {
 			}
 		}
 		accuracy = this.runEvent('Accuracy', target, pokemon, move, accuracy);
+		// Moves that target the user do not suffer from the 1/256 miss chance.
+		if (move.target === 'self' && accuracy !== true) accuracy++;
 
-		// 1/256 chance of missing always, no matter what.
+		// 1/256 chance of missing always, no matter what. Besides the aforementioned exceptions.
 		if (accuracy !== true && this.random(256) >= accuracy) {
 			this.attrLastMove('[miss]');
 			this.add('-miss', pokemon);
@@ -697,7 +699,8 @@ exports.BattleScripts = {
 		if (typeof move === 'number') move = {
 			basePower: move,
 			type: '???',
-			category: 'Physical'
+			category: 'Physical',
+			flags: {}
 		};
 
 		// Let's see if the target is immune to the move.
