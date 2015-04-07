@@ -60,13 +60,6 @@ exports.Formats = [
 		]
 	},
 	{
-		name: "UU (no Scald)",
-		section: "ORAS Singles",
-
-		ruleset: ['UU'],
-		banlist: ['Scald']
-	},
-	{
 		name: "RU",
 		section: "ORAS Singles",
 
@@ -77,6 +70,15 @@ exports.Formats = [
 		name: "NU",
 		section: "ORAS Singles",
 
+		searchShow: false,
+		ruleset: ['RU'],
+		banlist: ['RU', 'BL3', 'Glalitite', 'Steelixite']
+	},
+	{
+		name: "NU (suspect test)",
+		section: "ORAS Singles",
+
+		challengeShow: false,
 		ruleset: ['RU'],
 		banlist: ['RU', 'BL3', 'Glalitite', 'Steelixite']
 	},
@@ -283,12 +285,516 @@ exports.Formats = [
 	///////////////////////////////////////////////////////////////////
 
 	{
-		name: "Hidden Type",
+		name: "Inheritance",
 		section: "OM of the Month",
 		column: 2,
 
-		mod: 'hiddentype',
-		ruleset: ['OU']
+		ruleset: ['Pokemon', 'Species Clause', 'Moody Clause', 'Baton Pass Clause', 'Evasion Moves Clause', 'OHKO Clause',
+			'Swagger Clause', 'Endless Battle Clause', 'Team Preview', 'HP Percentage Mod', 'Sleep Clause Mod', 'Cancel Mod'
+		],
+		banlist: ['Unreleased', 'Arceus', 'Archeops', 'Darkrai', 'Deoxys', 'Deoxys-Attack', 'Deoxys-Speed', 'Dialga', 'Giratina', 'Giratina-Origin',
+			'Groudon', 'Ho-Oh', 'Keldeo', 'Kyogre', 'Kyurem-Black', 'Kyurem-White', 'Lugia', 'Mewtwo', 'Palkia', 'Rayquaza',
+			'Regigigas', 'Reshiram', 'Shaymin-Sky', 'Shedinja', 'Slaking', 'Xerneas', 'Yveltal', 'Zekrom',
+			'Blazikenite', 'Gengarite', 'Kangaskhanite', 'Mawilite', 'Salamencite', 'Soul Dew'
+		],
+		validateSet: (function () {
+			var pokemonWithAbility;
+			var createAbilityMap = function () {
+				var abilityMap = Object.create(null);
+				for (var speciesid in Tools.data.Pokedex) {
+					var pokemon = Tools.data.Pokedex[speciesid];
+					if (pokemon.num < 1 || pokemon.num > 719) continue;
+					for (var key in pokemon.abilities) {
+						var abilityId = toId(pokemon.abilities[key]);
+						if (abilityMap[abilityId]) {
+							abilityMap[abilityId].push(speciesid);
+						} else {
+							abilityMap[abilityId] = [speciesid];
+						}
+					}
+				}
+				return abilityMap;
+			};
+			var getPokemonWithAbility = function (ability) {
+				if (!pokemonWithAbility) pokemonWithAbility = createAbilityMap();
+				return pokemonWithAbility[toId(ability)] || [];
+			};
+			var restrictedPokemon = {
+				'Sableye':1, 'Smeargle':1
+			};
+			var restrictedAbilities = {
+				'Huge Power':1, 'Imposter':1, 'Parental Bond':1, 'Pure Power':1, 'Shadow Tag':1, 'Wonder Guard':1
+			};
+			return function (set, teamHas) {
+				var format = this.getFormat('inheritance');
+				var problems = [];
+				var inheritFailed = [];
+				var isIncompatibility;
+				var isHidden = false;
+				var lsetData = {set:set, format:format};
+				var name = set.name || set.species;
+
+				// Illegal stuff
+				var moves = [];
+				if (set.moves) {
+					var hasMove = {};
+					for (var i = 0; i < set.moves.length; i++) {
+						var move = this.getMove(set.moves[i]);
+						var moveid = move.id;
+						if (hasMove[moveid]) continue;
+						hasMove[moveid] = true;
+						moves.push(set.moves[i]);
+					}
+				}
+				set.moves = moves;
+				var pokemon = this.getTemplate(set.species);
+				if (pokemon.isMega) {
+					set.species = pokemon.baseSpecies;
+					set.ability = this.getTemplate(set.species).abilities['0'];
+				} else if (pokemon.isPrimal) {
+					set.species = pokemon.baseSpecies;
+					set.ability = this.getTemplate(set.species).abilities['0'];
+				}
+				var item = this.getItem(set.item);
+				if (pokemon.requiredItem && item.name !== pokemon.requiredItem) {
+					problems.push(name + ' needs to hold ' + pokemon.requiredItem + '.');
+				}
+				if (pokemon.num === 351) set.species = 'Castform';
+				if (pokemon.num === 421) set.species = 'Cherrim';
+				if (pokemon.num === 555) set.species = 'Darmanitan';
+				if (pokemon.num === 648) set.species = 'Meloetta';
+				if (pokemon.num === 649) {
+					switch (item.id) {
+					case 'burndrive':
+						set.species = 'Genesect-Burn';
+						break;
+					case 'chilldrive':
+						set.species = 'Genesect-Chill';
+						break;
+					case 'dousedrive':
+						set.species = 'Genesect-Douse';
+						break;
+					case 'shockdrive':
+						set.species = 'Genesect-Shock';
+						break;
+					default:
+						set.species = 'Genesect';
+					}
+				}
+				if (pokemon.num === 681) set.species = 'Aegislash';
+				if (pokemon.unobtainableShiny) set.shiny = false;
+
+				var setHas = {};
+
+				if (format.ruleset) {
+					for (var i = 0; i < format.ruleset.length; i++) {
+						var subformat = this.getFormat(format.ruleset[i]);
+						if (subformat.validateSet) {
+							problems = problems.concat(subformat.validateSet.call(this, set, format) || []);
+						}
+					}
+				}
+				var originalTemplate = this.getTemplate(set.species);
+				var template = originalTemplate;
+
+				var ability = this.getAbility(set.ability);
+				if (!ability.name) return [name + " needs to have an ability."];
+
+				var banlistTable = this.getBanlistTable(format);
+
+				var check = template.id;
+				var clause = '';
+				setHas[check] = true;
+				if (banlistTable[check]) {
+					clause = typeof banlistTable[check] === 'string' ? " by " + banlistTable[check] : '';
+					problems.push(set.species + ' is banned' + clause + '.');
+				} else if (!this.data.FormatsData[check] || !this.data.FormatsData[check].tier) {
+					check = toId(template.baseSpecies);
+					if (banlistTable[check]) {
+						clause = typeof banlistTable[check] === 'string' ? " by " + banlistTable[check] : '';
+						problems.push(template.baseSpecies + ' is banned' + clause + '.');
+					}
+				}
+
+				check = toId(set.ability);
+				setHas[check] = true;
+				if (banlistTable[check]) {
+					clause = typeof banlistTable[check] === 'string' ? " by " + banlistTable[check] : '';
+					problems.push(name + "'s ability " + set.ability + " is banned" + clause + ".");
+				}
+				check = toId(set.item);
+				setHas[check] = true;
+				if (banlistTable[check]) {
+					clause = typeof banlistTable[check] === 'string' ? " by " + banlistTable[check] : '';
+					problems.push(name + "'s item " + set.item + " is banned" + clause + ".");
+				}
+				if (banlistTable['Unreleased'] && item.isUnreleased) {
+					problems.push(name + "'s item " + set.item + " is unreleased.");
+				}
+
+				for (var i = 0; i < set.moves.length; i++) {
+					var move = this.getMove(string(set.moves[i]));
+					set.moves[i] = move.name;
+					check = move.id;
+					setHas[check] = true;
+					if (banlistTable[check]) {
+						clause = typeof banlistTable[check] === 'string' ? " by " + banlistTable[check] : '';
+						problems.push(name + "'s move " + set.moves[i] + " is banned" + clause + ".");
+					}
+
+					if (banlistTable['Unreleased']) {
+						if (move.isUnreleased) problems.push(name + "'s move " + set.moves[i] + " is unreleased.");
+					}
+				}
+
+				if (set.level < template.evoLevel) {
+					problems.push(name + " must be at least level " + template.evoLevel + " to be evolved.");
+				}
+
+				if (problems.length) return problems;
+
+				var gender = set.gender;
+				var shiny = set.shiny;
+				var pokemonPool = getPokemonWithAbility(ability.id);
+
+				for (var it = 0; it < pokemonPool.length; it++) {
+					problems = [];
+					isIncompatibility = false;
+					isHidden = false;
+					lsetData.sources = null;
+					lsetData.sourcesBefore = null;
+					set.gender = gender;
+					set.shiny = shiny;
+
+					template = this.getTemplate(pokemonPool[it]);
+					if (originalTemplate.species !== template.species) {
+						if (template.species in restrictedPokemon) {
+							problems.push(name + " can't inherit from " + template.species + ".");
+						} else if (ability.name in restrictedAbilities &&
+							ability.name !== originalTemplate.abilities['0'] &&
+							ability.name !== originalTemplate.abilities['1'] &&
+							ability.name !== originalTemplate.abilities['H']) {
+							problems.push(name + " can't have " + set.ability + ".");
+						}
+					}
+					var check;
+					var clause = '';
+					if (banlistTable['Unreleased'] && template.isUnreleased) {
+						if (!format.requirePentagon || (template.eggGroups[0] === 'Undiscovered' && !template.evos)) {
+							problems.push(name + " (" + template.species + ") is unreleased.");
+						}
+					}
+
+					if (ability.name === template.abilities['H']) {
+						isHidden = true;
+
+						if (template.unreleasedHidden && banlistTable['illegal']) {
+							problems.push(name + "'s hidden ability is unreleased.");
+						} else if (this.gen === 5 && set.level < 10 && (template.maleOnlyHidden || template.gender === 'N')) {
+							problems.push(name + " must be at least level 10 with its hidden ability.");
+						}
+						if (template.maleOnlyHidden) {
+							set.gender = 'M';
+							lsetData.sources = ['5D'];
+						}
+					}
+
+					for (var i = 0; i < set.moves.length; i++) {
+						var move = this.getMove(set.moves[i]);
+
+						var problem = format.checkLearnset.call(this, move, template, lsetData);
+						if (problem) {
+							var problemString = name + " can't learn " + move.name;
+							if (problem.type === 'incompatible') {
+								if (isHidden) {
+									problemString = problemString.concat(" because it's incompatible with its ability or another move.");
+								} else {
+									problemString = problemString.concat(" because it's incompatible with another move.");
+								}
+								isIncompatibility = true;
+							} else if (problem.type === 'oversketched') {
+								problemString = problemString.concat(" because it can only sketch " + problem.maxSketches + " move" + (problem.maxSketches > 1 ? "s" : "") + ".");
+								isIncompatibility = true;
+							} else {
+								problemString = problemString.concat(".");
+							}
+							problems.push(problemString);
+						}
+					}
+
+					if (lsetData.sources && lsetData.sources.length === 1 && !lsetData.sourcesBefore) {
+						var source = lsetData.sources[0];
+						if (source.charAt(1) === 'S') {
+							var eventData = null;
+							var splitSource = source.substr(2).split(' ');
+							var eventTemplate = this.getTemplate(splitSource[1]);
+							if (eventTemplate.eventPokemon) eventData = eventTemplate.eventPokemon[parseInt(splitSource[0], 10)];
+							if (eventData) {
+								if (eventData.nature && eventData.nature !== set.nature) {
+									problems.push(name + " must have a " + eventData.nature + " nature because it has a move only available from a specific event.");
+								}
+								if (eventData.shiny) {
+									set.shiny = true;
+								}
+								if (eventData.generation < 5) eventData.isHidden = false;
+								if (eventData.isHidden !== undefined && eventData.isHidden !== isHidden) {
+									problems.push(name + (isHidden ? " can't have" : " must have") + " its hidden ability because it has a move only available from a specific event.");
+								}
+								if (this.gen <= 5 && eventData.abilities && eventData.abilities.indexOf(ability.id) < 0) {
+									problems.push(name + " must have " + eventData.abilities.join(" or ") + " because it has a move only available from a specific event.");
+								}
+								if (eventData.gender) {
+									set.gender = eventData.gender;
+								}
+								if (eventData.level && set.level < eventData.level) {
+									problems.push(name + " must be at least level " + eventData.level + " because it has a move only available from a specific event.");
+								}
+							}
+							isHidden = false;
+						}
+					}
+					if (isHidden && lsetData.sourcesBefore) {
+						if (!lsetData.sources && lsetData.sourcesBefore < 5) {
+							problems.push(name + " has a hidden ability - it can't have moves only learned before gen 5.");
+						} else if (lsetData.sources && template.gender && template.gender !== 'F' && !{'Nidoran-M':1, 'Nidorino':1, 'Nidoking':1, 'Volbeat':1}[template.species]) {
+							var compatibleSource = false;
+							for (var i = 0, len = lsetData.sources.length; i < len; i++) {
+								if (lsetData.sources[i].charAt(1) === 'E' || (lsetData.sources[i].substr(0, 2) === '5D' && set.level >= 10)) {
+									compatibleSource = true;
+									break;
+								}
+							}
+							if (!compatibleSource) {
+								problems.push(name + " has moves incompatible with its hidden ability.");
+							}
+						}
+					}
+					if (!lsetData.sources && lsetData.sourcesBefore <= 3 && this.getAbility(set.ability).gen === 4 && !template.prevo && this.gen <= 5) {
+						problems.push(name + " has a gen 4 ability and isn't evolved - it can't use anything from gen 3.");
+					}
+					if (!lsetData.sources && lsetData.sourcesBefore >= 3 && (isHidden || this.gen <= 5) && template.gen <= lsetData.sourcesBefore) {
+						var oldAbilities = this.mod('gen' + lsetData.sourcesBefore).getTemplate(template.species).abilities;
+						if (ability.name !== oldAbilities['0'] && ability.name !== oldAbilities['1'] && !oldAbilities['H']) {
+							problems.push(name + " has moves incompatible with its ability.");
+						}
+					}
+
+					setHas[toId(template.tier)] = true;
+					if (banlistTable[template.tier]) {
+						problems.push(name + " is in " + template.tier + ", which is banned.");
+					}
+
+					for (var i = 0; i < format.setBanTable.length; i++) {
+						var bannedCombo = true;
+						for (var j = 0; j < format.setBanTable[i].length; j++) {
+							if (!setHas[format.setBanTable[i][j]]) {
+								bannedCombo = false;
+								break;
+							}
+						}
+						if (bannedCombo) {
+							clause = format.name ? " by " + format.name : '';
+							problems.push(name + " has the combination of " + format.setBanTable[i].join(' + ') + ", which is banned" + clause + ".");
+						}
+					}
+
+					if (!problems.length) {
+						if (set.forcedLevel) set.level = set.forcedLevel;
+						if (teamHas) {
+							for (var i in setHas) {
+								teamHas[i] = true;
+							}
+						}
+						return false;
+					}
+
+					if (isIncompatibility) {
+						inheritFailed.push({
+							species: template.species,
+							problems: problems
+						});
+					}
+				}
+
+				switch (inheritFailed.length) {
+				case 0:
+					return [name + " has an illegal Inheritance set."];
+				case 1:
+					return [name + " has an illegal set (incompatibility) inherited from " + inheritFailed[0].species].concat(inheritFailed[0].problems);
+				case 2:
+					return [name + " has an illegal set (incompatibility) inherited either from " + inheritFailed[0].species + " or " + inheritFailed[1].species];
+				default:
+					return [name + " has an illegal set due to incompatibility."];
+				}
+			};
+		})(),
+		checkLearnset: function (move, template, lsetData) {
+			move = toId(move);
+			template = this.getTemplate(template);
+
+			lsetData = lsetData || {};
+			var set = (lsetData.set || (lsetData.set = {}));
+			var format = (lsetData.format || (lsetData.format = {}));
+			var alreadyChecked = {};
+			var level = set.level || 100;
+
+			var isHidden = false;
+			if (set.ability && this.getAbility(set.ability).name === template.abilities['H']) isHidden = true;
+			var incompatibleHidden = false;
+
+			var limit1 = true;
+			var sketch = false;
+			var blockedHM = false;
+
+			var sources = [];
+			var sourcesBefore = 0;
+			var noFutureGen = this.gen >= 3 ? true : !!(format.banlistTable && format.banlistTable['tradeback']);
+
+			do {
+				alreadyChecked[template.speciesid] = true;
+				if (lsetData.ignoreMoveType && this.getMove(move).type === lsetData.ignoreMoveType) return false;
+				if (template.learnset) {
+					if (template.learnset[move] || template.learnset['sketch']) {
+						var lset = template.learnset[move];
+						if (!lset || template.speciesid === 'smeargle') {
+							lset = template.learnset['sketch'];
+							sketch = true;
+							if (move in {'chatter':1, 'struggle':1, 'magikarpsrevenge':1}) return true;
+						}
+						if (typeof lset === 'string') lset = [lset];
+
+						for (var i = 0, len = lset.length; i < len; i++) {
+							var learned = lset[i];
+							if (noFutureGen && parseInt(learned.charAt(0), 10) > this.gen) continue;
+							if (learned.charAt(0) !== '6' && isHidden && !this.mod('gen' + learned.charAt(0)).getTemplate(template.species).abilities['H']) {
+								incompatibleHidden = true;
+								continue;
+							}
+							if (!template.isNonstandard) {
+								if (this.gen >= 4 && learned.charAt(0) <= 3 && move in {'cut':1, 'fly':1, 'surf':1, 'strength':1, 'flash':1, 'rocksmash':1, 'waterfall':1, 'dive':1}) continue;
+								if (this.gen >= 5 && learned.charAt(0) <= 4 && move in {'cut':1, 'fly':1, 'surf':1, 'strength':1, 'rocksmash':1, 'waterfall':1, 'rockclimb':1}) continue;
+								if (this.gen >= 5 && move in {'defog':1, 'whirlpool':1} && learned.charAt(0) <= 4) blockedHM = true;
+							}
+							if (learned.substr(0, 2) in {'4L':1, '5L':1, '6L':1}) {
+								if (level >= parseInt(learned.substr(2), 10)) {
+									return false;
+								}
+								if (!template.gender || template.gender === 'F') {
+									learned = learned.charAt(0) + 'Eany';
+								} else {
+									continue;
+								}
+							}
+							if (learned.charAt(1) in {L:1, M:1, T:1}) {
+								if (learned.charAt(0) === '6') {
+									return false;
+								}
+								limit1 = false;
+								sourcesBefore = Math.max(sourcesBefore, parseInt(learned.charAt(0), 10));
+							} else if (learned.charAt(1) in {E:1, S:1, D:1}) {
+								if (learned.charAt(1) === 'E') {
+									if (learned.charAt(0) === '6') {
+										learned = '6E' + (template.prevo ? template.id : '');
+										sources.push(learned);
+										continue;
+									}
+									var eggGroups = template.eggGroups;
+									if (!eggGroups) continue;
+									if (eggGroups[0] === 'Undiscovered') eggGroups = this.getTemplate(template.evos[0]).eggGroups;
+									var atLeastOne = false;
+									var fromSelf = (learned.substr(1) === 'Eany');
+									learned = learned.substr(0, 2);
+									for (var templateid in this.data.Pokedex) {
+										var dexEntry = this.getTemplate(templateid);
+										if (!dexEntry.isNonstandard && dexEntry.gen <= parseInt(learned.charAt(0), 10) && (dexEntry.gender !== 'N' || this.gen <= 1 && dexEntry.gen <= 1)) {
+											if (fromSelf || !alreadyChecked[dexEntry.speciesid] && dexEntry.learnset && (dexEntry.learnset[move] || dexEntry.learnset['sketch'])) {
+												if (dexEntry.eggGroups.intersect(eggGroups).length) {
+													atLeastOne = true;
+													sources.push(learned + dexEntry.id);
+												}
+											}
+										}
+									}
+									if (!atLeastOne) sources.push(learned + template.id);
+									if (!noFutureGen) sourcesBefore = Math.max(sourcesBefore, parseInt(learned.charAt(0), 10));
+								} else if (learned.charAt(1) === 'S') {
+									sources.push(learned + ' ' + template.id);
+									if (!noFutureGen) sourcesBefore = Math.max(sourcesBefore, parseInt(learned.charAt(0), 10));
+								} else {
+									var minLevel = (template.evoLevel && template.evoLevel > 10) ? template.evoLevel : 10;
+									if (set.level < minLevel) continue;
+									sources.push(learned);
+								}
+							}
+						}
+					}
+				}
+				if (!template.learnset && template.baseSpecies !== template.species) {
+					template = this.getTemplate(template.baseSpecies);
+				} else if (template.prevo) {
+					template = this.getTemplate(template.prevo);
+					if (template.gen > Math.max(2, this.gen)) template = null;
+					if (template && !template.abilities['H']) isHidden = false;
+				} else if (template.baseSpecies !== template.species && template.baseSpecies !== 'Kyurem' && template.baseSpecies !== 'Pikachu') {
+					template = this.getTemplate(template.baseSpecies);
+				} else {
+					template = null;
+				}
+			} while (template && template.species && !alreadyChecked[template.speciesid]);
+
+			if (limit1 && sketch) {
+				if (lsetData.sketchMove) {
+					return {type:'oversketched', maxSketches: 1};
+				}
+				lsetData.sketchMove = move;
+			}
+
+			if (!sourcesBefore && !sources.length) {
+				if (incompatibleHidden) return {type:'incompatible'};
+				return true;
+			}
+			if (!sources.length) sources = null;
+			if (sourcesBefore || lsetData.sourcesBefore) {
+				var learned;
+				if (sourcesBefore && lsetData.sources) {
+					if (!sources) sources = [];
+					for (var i = 0, len = lsetData.sources.length; i < len; i++) {
+						learned = lsetData.sources[i];
+						if (parseInt(learned.charAt(0), 10) <= sourcesBefore) {
+							sources.push(learned);
+						}
+					}
+					if (!lsetData.sourcesBefore) sourcesBefore = 0;
+				}
+				if (lsetData.sourcesBefore && sources) {
+					if (!lsetData.sources) lsetData.sources = [];
+					for (var i = 0, len = sources.length; i < len; i++) {
+						learned = sources[i];
+						if (parseInt(learned.charAt(0), 10) <= lsetData.sourcesBefore) {
+							lsetData.sources.push(learned);
+						}
+					}
+					if (!sourcesBefore) delete lsetData.sourcesBefore;
+				}
+			}
+			if (sources) {
+				if (lsetData.sources) {
+					var intersectSources = lsetData.sources.intersect(sources);
+					if (!intersectSources.length && !(sourcesBefore && lsetData.sourcesBefore)) {
+						return {type:'incompatible'};
+					}
+					lsetData.sources = intersectSources;
+				} else {
+					lsetData.sources = sources.unique();
+				}
+			}
+
+			if (sourcesBefore) {
+				lsetData.sourcesBefore = Math.min(sourcesBefore, lsetData.sourcesBefore || 6);
+			}
+
+			return false;
+		}
 	},
 	{
 		name: "[Seasonal] Super Staff Bros.",
@@ -443,7 +949,7 @@ exports.Formats = [
 				pokemon.name = '@kupo';
 				pokemon.kupoTransformed = false;
 			}
-			// Deal with timbuktu's move (read onModifyMove relevant part).
+			// Deal with Timbuktu's move (read onModifyMove relevant part).
 			if (name === 'timbuktu') {
 				pokemon.timesGeoblastUsed = 0;
 			}
@@ -526,7 +1032,7 @@ exports.Formats = [
 				this.add("c|~chaos|I always win");
 			}
 			if (name === 'haunter') {
-				this.add("c|~Haunter|Dux mea lux");
+				this.add("c|~haunter|Dux mea lux");
 			}
 			if (name === 'jasmine') {
 				if (this[((pokemon.side.id === 'p1') ? 'p2' : 'p1')].active[0].name.charAt(0) === '%') {
@@ -643,7 +1149,7 @@ exports.Formats = [
 			}
 			if (name === 'bean') {
 				sentences = ["Everybody wants to be a cat", "if you KO me i'll ban u on PS", "just simply outplay the coin-toss"].randomize();
-				this.add('c|@Bean|' + sentences[0]);
+				this.add('c|@bean|' + sentences[0]);
 			}
 			if (name === 'beowulf') {
 				this.add('c|@Beowulf|Grovel peasant, you are in the presence of the RNGesus');
@@ -791,9 +1297,6 @@ exports.Formats = [
 			if (name === 'marty') {
 				this.add('c|@Marty|Prepare yourself.');
 			}
-			if (name === 'mattl') {
-				this.add('c|@MattL|The annoyance I will cause is not well-defined.');
-			}
 			if (name === 'morfent') {
 				this.add('c|@Morfent|``──────▀█████▄──────▲``');
 				this.add('c|@Morfent|``───▄███████████▄──◀█▶``');
@@ -847,9 +1350,6 @@ exports.Formats = [
 				sentences = ['no guys stop fighting', 'mature people use their words', 'please direct all attacks to user: beowulf'];
 				this.add('c|@Shame That|' + sentences[this.random(3)]);
 			}
-			if (name === 'shaymin') {
-				this.add('c|@shaymin|Ready for hax?');
-			}
 			if (name === 'skitty') {
 				this.add('c|@Skitty|\\_$-_-$_/');
 			}
@@ -889,6 +1389,9 @@ exports.Formats = [
 			if (name === 'tgmd') {
 				this.add('c|@TGMD|I\'m a dog :]');
 			}
+			if (name === 'timbuktu') {
+				this.add('c|@Timbuktu|plot twist');
+			}
 			if (name === 'trickster') {
 				this.add('c|@Trickster|' + ['I do this for free, you know.', 'Believe in the me that believes in you!'][this.random(2)]);
 			}
@@ -921,6 +1424,10 @@ exports.Formats = [
 				sentences = ['BEAR MY ARCTIC BLAST', 'lmao what kind of team is this', 'guys guys guess what?!?!?!?!', 'Double battles are completely superior to single battles.', 'I miss the days when PS never broke 100 users and all the old auth were still around.'];
 				this.add('c|%Arcticblast|' + sentences[this.random(5)]);
 			}
+			if (name === 'articuno') {
+				sentences = ['Don\'t hurt me, I\'m a gril!', '/me quivers **violently**', 'Don\'t make me use my ban whip...'];
+				this.add('c|%Articuno|' + sentences[this.random(3)]);
+			}
 			if (name === 'astara') {
 				this.add('c|%Ast☆arA|I\'d rather take a nap, I hope you won\'t be a petilil shit, Eat some rare candies and get on my level.');
 			}
@@ -943,6 +1450,10 @@ exports.Formats = [
 			}
 			if (name === 'bloobblob') {
 				this.add('c|%bloobblob|Contract?');
+			}
+			if (name === 'crestfall') {
+				sentences = ['On wings of night.', 'Let us hunt those who have fallen to darkness.'];
+				this.add('c|%Crestfall|' + sentences[this.random(2)]);
 			}
 			if (name === 'feliburn') {
 				this.add('c|%Feliburn|Come on!');
@@ -1065,6 +1576,12 @@ exports.Formats = [
 			if (name === 'diatom') {
 				this.add('-message', pokemon.side.foe.name + ' was banned by Diatom. (you should be thankful you are banned and not permabanned)');
 			}
+			if (name === 'mattl') {
+				this.add('c|+MattL|The annoyance I will cause is not well-defined.');
+			}
+			if (name === 'shaymin') {
+				this.add('c|+shaymin|Ready for hax?');
+			}
 			if (name === 'somalia') {
 				this.add('c|+SOMALIA|stupidest shit ever');
 			}
@@ -1140,7 +1657,7 @@ exports.Formats = [
 				}
 			}
 			if (name === 'haunter') {
-				this.add('c|~Haunter|you can\'t compare with my powers');
+				this.add('c|~haunter|you can\'t compare with my powers');
 			}
 			if (name === 'jasmine') {
 				this.add('c|~Jasmine|' + ['I meant to do that.', 'God, I\'m the worse digimon.'][this.random(2)]);
@@ -1201,11 +1718,11 @@ exports.Formats = [
 				this.add('c|@asgdf|' + ['Looks like I spoke too hasteely', 'You only won because I couldn\'t think of a penguin pun!'][this.random(2)]);
 			}
 			if (name === 'barton') {
-				this.add('c|@Barton|' + ['ok', 'haha?'][this.random(2)]);
+				this.add('c|@barton|' + ['ok', 'haha?'][this.random(2)]);
 			}
 			if (name === 'bean') {
 				sentences = ['that\'s it ur getting banned', 'meow', '(✖╭╮✖)'];
-				this.add('c|@Bean|' + sentences[this.random(3)]);
+				this.add('c|@bean|' + sentences[this.random(3)]);
 			}
 			if (name === 'beowulf') {
 				this.add('c|@Beowulf|There is no need to be mad');
@@ -1274,7 +1791,7 @@ exports.Formats = [
 				this.add('c|@Dell|──▀████████▀▀███████▀──────────');
 			}
 			if (name === 'eeveegeneral') {
-				this.add('c|@Eevee General|' + ['Retreat!', 'You may have won the battle, but you haven\'t won the war!'][this.random(2)]);
+				this.add('c|@Eevee General|' + ['Retreat!', 'You may have won the battle, but you haven\'t won the war!', 'I salute you o7'][this.random(3)]);
 			}
 			if (name === 'electrolyte') {
 				this.add('c|@Electrolyte|just wait till I hit puberty...');
@@ -1354,9 +1871,6 @@ exports.Formats = [
 			if (name === 'marty') {
 				this.add('c|@Marty|Your fate is sealed');
 			}
-			if (name === 'mattl') {
-				this.add('c|@MattL|Finish him! You used "Finals week!" Fatality!');
-			}
 			if (name === 'morfent') {
 				sentences = ['Hacking claims the lives of over 2,000 registered laddering alts every day.', 'Every 60 seconds in Africa, a minute passes. Together we can stop this. Please spread the word.', 'SOOOOOO $TONED FUCK MAN AW $HIT NIGGA HELLA MOTHER FUCKING 666 ODD FUTURE MAN BRO CHECK THIS OUT MY SWAG WITH THE WHAT WHOLE 666 420 $$$$ HOLLA HOLLA GET DOLLA SWED CASH FUCKING MARIJUANA CIGARETTES GANGSTA GANGSTA EAZY-E C;;R;E;A;M; SO BAKED OFF THE BOBMARLEY GANJA 420 SHIT PURE OG KUUSSHHH LEGALIZE CRYSTAL WEED'];
 				this.add('c|@Morfent|' + sentences[this.random(3)]);
@@ -1399,9 +1913,6 @@ exports.Formats = [
 				sentences = ["ok agree to disagree", "rematch, don't attack this time", "i blame beowulf"];
 				this.add('c|@Shame That|' + sentences[this.random(3)]);
 			}
-			if (name === 'shaymin') {
-				this.add('c|@shaymin|You\'ve done well, perhaps...too well, even beating the odds!');
-			}
 			if (name === 'skitty') {
 				this.add('c|@Skitty|!learn skitty, roleplay');
 				this.add('raw|<div class="infobox">Skitty <span class="message-learn-cannotlearn">can\'t</span> learn Role Play</div>');
@@ -1436,6 +1947,9 @@ exports.Formats = [
 			if (name === 'tgmd') {
 				this.add('c|@TGMD|rip in pepsi');
 			}
+			if (name === 'timbuktu') {
+				this.add('c|@Timbuktu|' + ['</3', 'broken'][this.random(2)]);
+			}
 			if (name === 'trickster') {
 				sentences = ['RIP in pepperoni cappuccino pistachio.', 'El psy congroo.', 'W-wow! Hacker!', '“This guy\'s team is CRAZY!” ☑ “My team can\'t win against a team like that” ☑ "He NEEDED precisely those two crits to win" ☑ “He led with the only Pokemon that could beat me” ☑ "He got the perfect hax" ☑ “There was nothing I could do” ☑ “I played that perfectly”', '(⊙﹏⊙✿)'];
 				this.add('c|@Trickster|' + sentences[this.random(5)]);
@@ -1469,9 +1983,13 @@ exports.Formats = [
 				sentences = ['totally had it but choked, gg', 'I would have won if it weren\'t for HAX', 'oh', 'Double battles are stil superior to single battles.', 'newfag'];
 				this.add('c|%Arcticblast|' + sentences[this.random(5)]);
 			}
+			if (name === 'articuno') {
+				sentences = ['This is why you don\'t get any girls.', 'fite me irl', 'Actually, I don\'t have a gender...'];
+				this.add('c|%Articuno|' + sentences[this.random(3)]);
+			}
 			if (name === 'astara') {
 				sentences = ['/me twerks into oblivion', 'good night ♥', 'Astara Vista Baby'];
-				this.add('c|%Ast☆ara|' + sentences[this.random(3)]);
+				this.add('c|%Ast☆arA|' + sentences[this.random(3)]);
 			}
 			if (name === 'astyanax') {
 				this.add('c|%Astyanax|:^( Bottom kek');
@@ -1490,6 +2008,9 @@ exports.Formats = [
 			}
 			if (name === 'bloobblob') {
 				this.add('c|%bloobblob|I won\'t die! Even if I\'m killed!');
+			}
+			if (name === 'crestfall') {
+				this.add('c|%Crestfall|Vayne [All Chat]: Outplayed me gg no re');
 			}
 			if (name === 'feliburn') {
 				this.add('c|%Feliburn|' + ['BHUWUUU!', 'I like shorts! They\'re comfy and easy to wear!'][this.random(2)]);
@@ -1535,10 +2056,16 @@ exports.Formats = [
 			if (name === 'diatom' && !pokemon.hasBeenThanked) {
 				this.add('c|★' + pokemon.side.foe.name + '|Thanks Diatom...');
 			}
+			if (name === 'mattl') {
+				this.add('c|+MattL|Finish him! You used "Finals week!" Fatality!');
+			}
 			if (name === 'redew') {
 				this.add('c|+Redew|i hope u think ur a good player');
 				this.add('c|+Redew|play spl man');
 				this.add('c|+Redew|ud win lots');
+			}
+			if (name === 'shaymin') {
+				this.add('c|+shaymin|You\'ve done well, perhaps...too well, even beating the odds!');
 			}
 			if (name === 'somalia') {
 				this.add('c|+SOMALIA|tired of this shitass game');
@@ -1579,7 +2106,7 @@ exports.Formats = [
 			}
 		},
 		onAfterMoveSelf: function (source, target, move) {
-			// Make Haunter not immune to Life Orb as a means to balance.
+			// Make haunter not immune to Life Orb as a means to balance.
 			if (toId(source.name) === 'haunter') {
 				this.damage(source.maxhp / 10, source, source, this.getItem('lifeorb'));
 			}
@@ -1691,14 +2218,13 @@ exports.Formats = [
 			// Admin signature moves.
 			if (move.id === 'spikes' && name === 'antar') {
 				move.name = 'Firebomb';
-				move.sideCondition = 'spikes';
-				move.category = 'Special';
-				move.type = 'Fire';
 				move.basePower = 100;
-				move.onTryHit = function (target, source, move) {
+				move.category = 'Special';
+				move.flags = {};
+				move.type = 'Fire';
+				move.onTryHitSide = function (side, source, move) {
 					this.attrLastMove('[still]');
-					this.add('-anim', source, "Overheat", target);
-					return null;
+					this.add('-anim', source, "Overheat", side.active[0]);
 				};
 			}
 			if (move.id === 'embargo' && name === 'chaos') {
@@ -1823,7 +2349,7 @@ exports.Formats = [
 			// Leader signature moves.
 			if (move.id === 'geomancy' && name === 'hollywood') {
 				move.name = 'Meme Mime';
-				move.isTwoTurnMove = false;
+				move.flags = {};
 				move.onTry = function () {};
 				move.boosts = {atk:1, def:1, spa:1, spd:1, spe:1, accuracy:1};
 				move.onTryHit = function (target, source, move) {
@@ -1838,7 +2364,6 @@ exports.Formats = [
 				move.type = 'Flying';
 				move.category = 'Special';
 				move.basePower = 80;
-				move.notSubBlocked = true;
 				move.onTryHit = function (target, source, move) {
 					this.attrLastMove('[still]');
 					this.add('-anim', source, "Boomburst", target);
@@ -2009,6 +2534,8 @@ exports.Formats = [
 			if (move.id === 'bugbuzz' && name === 'beowulf') {
 				move.name = 'Buzzing of the Swarm';
 				move.category = 'Physical';
+				move.basePower = 100;
+				move.secondaries = [{chance:10, volatileStatus: 'flinch'}];
 			}
 			if (move.id === 'dragontail' && name === 'biggie') {
 				move.name = 'Food Rush';
@@ -2091,7 +2618,6 @@ exports.Formats = [
 					move.name = 'Study';
 					move.priority = 1;
 					move.flags = {protect:1};
-					move.notSubBlocked = true;
 					move.onTryHit = function (target, source) {
 						if (source.lastAttackType === 'None') {
 							this.add('-hint', "Study only works when preceded by an attacking move.");
@@ -2252,7 +2778,7 @@ exports.Formats = [
 			}
 			if (move.id === 'transform' && name === 'kupo') {
 				move.name = 'Kupo Nuts';
-				move.notSubBlocked = true;
+				move.flags = {};
 				move.priority = 2;
 				move.onHit = function (pokemon, user) {
 					var template = pokemon.template;
@@ -2310,7 +2836,6 @@ exports.Formats = [
 				move.name = 'Shadow Storm';
 				move.type = 'Shadow';
 				move.accuracy = true;
-				move.ignoreScreens = true;
 				move.ignoreDefensive = true;
 				move.defensiveCategory = 'Physical';
 				move.basePowerCallback = function (pokemon, target) {
@@ -2352,7 +2877,7 @@ exports.Formats = [
 				move.accuracy = 100;
 				delete move.secondary;
 				delete move.secondaries;
-				move.self = {volatileStatus: 'magnetrise', boosts: {evasion:-1, accuracy:-1}};
+				move.self = {volatileStatus: 'magnetrise'};
 			}
 			if (move.id === 'protect' && name === 'layell') {
 				move.name = 'Pixel Protection';
@@ -2521,7 +3046,10 @@ exports.Formats = [
 					this.add('-anim', source, "Brave Bird", target);
 				};
 				move.onHit = function (target, source) {
-					this.heal(100, source, source);
+					this.heal(120, source, source);
+				};
+				move.onMoveFail = function (target, source, move) {
+					this.directDamage(120, source, source);
 				};
 			}
 			if (move.id === 'frenzyplant' && name === 'rosiethevenusaur') {
@@ -2698,15 +3226,18 @@ exports.Formats = [
 				move.name = 'Water Bomb';
 				move.basePowerCallback = function (pokemon, target) {
 					if (this.effectiveWeather() === 'raindance' || this.effectiveWeather() === 'primordialsea') return 93;
+					if (this.effectiveWeather() === 'sunnyday' || this.effectiveWeather() === 'desolateland') return 210;
 					return 140;
 				};
-				move.isContact = false;
 				move.onTryHit = function (target, source) {
 					this.attrLastMove('[still]');
 					this.add('-anim', source, "Seismic Toss", target);
+					target.ignore['Ability'] = true;
 				};
 				move.accuracy = true;
 				move.affectedByImmunities = false;
+				move.ignoreDefensive = true;
+				move.ignoreEvasion = true;
 			}
 			if (move.id === 'detect' && name === 'zebraiken') {
 				move.name = 'bzzt';
@@ -2768,6 +3299,13 @@ exports.Formats = [
 					}
 				};
 			}
+			if (move.id === 'whirlwind' && name === 'articuno') {
+				move.name = 'True Support';
+				move.self = {boosts: {def:1, spd:1}};
+				move.onHit = function (target, source) {
+					this.useMove('substitute', target, target);
+				};
+			}
 			if (move.id === 'toxic' && name === 'astyanax') {
 				move.name = 'Amphibian Toxin';
 				move.accuracy = 100;
@@ -2821,6 +3359,21 @@ exports.Formats = [
 					this.attrLastMove('[still]');
 					this.add('-anim', source, "Tail Slap", target);
 				};
+			}
+			if (move.id === 'protect' && name === 'crestfall') {
+				move.name = 'Final Hour';
+				move.onTryHit = function (pokemon) {
+					if (pokemon.activeTurns > 1) {
+						this.add('-hint', "Final Hour only works on your first turn out.");
+						return false;
+					}
+					this.attrLastMove('[still]');
+					this.add('-anim', pokemon, "Dark Pulse", pokemon);
+				};
+				move.onHit = function () {
+					this.add('c|%Crestfall|' + ['The die is cast...', 'Time for reckoning.'][this.random(2)]);
+				};
+				move.self = {boosts: {spe:2, evasion:1, def:-2, spd:-2}};
 			}
 			if (move.id === 'dragonrush' && name === 'dtc') {
 				move.name = 'Dragon Smash';
@@ -2887,7 +3440,6 @@ exports.Formats = [
 				move.type = 'Electric';
 				move.category = 'Status';
 				move.basePower = 0;
-				delete move.isContact;
 				move.self = {volatileStatus:'torment'};
 				move.onTryHit = function (target, source) {
 					if (pokemon.activeTurns > 1) {
@@ -3403,6 +3955,14 @@ exports.Formats = [
 		}
 	},
 	{
+		name: "Hidden Type",
+		section: "Other Metagames",
+
+		searchShow: false,
+		mod: 'hiddentype',
+		ruleset: ['OU']
+	},
+	{
 		name: "Middle Cup",
 		section: "Other Metagames",
 
@@ -3434,6 +3994,14 @@ exports.Formats = [
 		searchShow: false,
 		ruleset: ['Pokemon', 'Standard NEXT', 'Team Preview'],
 		banlist: ['Uber']
+	},
+	{
+		name: "Monotype Random Battle",
+		section: "Other Metagames",
+
+		team: 'randomMonotype',
+		searchShow: false,
+		ruleset: ['Pokemon', 'Same Type Clause', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Hackmons Challenge Cup",
@@ -3930,6 +4498,15 @@ exports.Formats = [
 		banlist: ['Uber']
 	},
 	{
+		name: "[Gen 2] Random Battle",
+		section: "Past Generations",
+
+		mod: 'gen2',
+		searchShow: false,
+		team: 'random',
+		ruleset: ['Pokemon', 'Standard']
+	},
+	{
 		name: "[Gen 2] Custom Game",
 		section: "Past Generations",
 
@@ -3964,6 +4541,15 @@ exports.Formats = [
 
 		mod: 'gen1',
 		team: 'random',
+		ruleset: ['Pokemon', 'Sleep Clause Mod', 'Freeze Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
+	},
+	{
+		name: "[Gen 1] Challenge Cup",
+		section: "Past Generations",
+
+		mod: 'gen1',
+		searchShow: false,
+		team: 'randomCC',
 		ruleset: ['Pokemon', 'Sleep Clause Mod', 'Freeze Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{

@@ -201,8 +201,6 @@ var GlobalRoom = (function () {
 			}];
 		}
 
-		// cached list of chat rooms for the room list
-		// usually does not contain private rooms, but no guarantees
 		this.chatRooms = [];
 
 		this.autojoin = []; // rooms that users autojoin upon connecting
@@ -220,7 +218,7 @@ var GlobalRoom = (function () {
 					aliases[room.aliases[a]] = room;
 				}
 			}
-			if (!room.isPrivate || room.isPrivate === 'voice') this.chatRooms.push(room);
+			this.chatRooms.push(room);
 			if (room.autojoin) this.autojoin.push(id);
 			if (room.staffAutojoin) this.staffAutojoin.push(id);
 		}
@@ -805,13 +803,13 @@ var BattleRoom = (function () {
 							var oldacre = Math.round(data.p1rating.oldacre);
 							var acre = Math.round(data.p1rating.acre);
 							var reasons = '' + (acre - oldacre) + ' for ' + (p1score > 0.99 ? 'winning' : (p1score < 0.01 ? 'losing' : 'tying'));
-							if (reasons.substr(0, 1) !== '-') reasons = '+' + reasons;
+							if (reasons.charAt(0) !== '-') reasons = '+' + reasons;
 							self.addRaw(Tools.escapeHTML(p1) + '\'s rating: ' + oldacre + ' &rarr; <strong>' + acre + '</strong><br />(' + reasons + ')');
 
 							oldacre = Math.round(data.p2rating.oldacre);
 							acre = Math.round(data.p2rating.acre);
 							reasons = '' + (acre - oldacre) + ' for ' + (p1score > 0.99 ? 'losing' : (p1score < 0.01 ? 'winning' : 'tying'));
-							if (reasons.substr(0, 1) !== '-') reasons = '+' + reasons;
+							if (reasons.charAt(0) !== '-') reasons = '+' + reasons;
 							self.addRaw(Tools.escapeHTML(p2) + '\'s rating: ' + oldacre + ' &rarr; <strong>' + acre + '</strong><br />(' + reasons + ')');
 
 							Users.get(p1).cacheMMR(rated.format, data.p1rating);
