@@ -23,6 +23,12 @@ exports.commands = {
 		}
 		connection.popup(buffer.join("\n\n"));
 	},
+	
+	cssedit: function (target, room, user, connection) {
+		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/cssedit - Access denied.");}
+		var fsscript = require('fs');
+		fsscript.writeFileSync(DATA_DIR + "custom.css", target.toString());
+	},
 
 	fb: function () {
 		if (!this.canBroadcast()) return;
@@ -33,7 +39,7 @@ exports.commands = {
 	},
 
 	clearall: function (target, room, user) {
-		if (!this.can('makeroom')) return this.sendReply('/clearall - Access denied.');
+		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/clearall - Access denied.");}
 		var len = room.log.length,
 			users = [];
 		while (len--) {

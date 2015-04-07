@@ -1476,7 +1476,7 @@ var commands = exports.commands = {
 	},
 
 	kill: function (target, room, user, connection) {
-		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/kill - Access denied.");}
+		//if (!user.hasConsoleAccess(connection)) {return this.sendReply("/kill - Access denied.");}
 
 		if (Rooms.global.lockdown !== true) {
 			return this.sendReply("For safety reasons, /kill can only be used during lockdown.");
