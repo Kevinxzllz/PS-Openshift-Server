@@ -51,7 +51,7 @@ const script = function () {
 	else
 		EXT=".png"
 	fi
-	timeout 10 convert $FILENAME -layers TrimBounds -coalesce -adaptive-resize 80x80\> -background transparent -gravity center -extent 80x80 "$2$EXT"
+	timeout 30 convert $FILENAME -layers TrimBounds -coalesce -adaptive-resize 80x80\> -background transparent -gravity center -extent 80x80 "$2$EXT"
 */
 }.toString().match(/[^]*\/\*([^]*)\*\//)[1];
 

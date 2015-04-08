@@ -24,10 +24,29 @@ exports.commands = {
 		connection.popup(buffer.join("\n\n"));
 	},
 	
+	postimage: 'image',
+	image: function (target, room, user) {
+		if (!target) return this.sendReply('Usage: /image link, size');
+		if (!this.can('ban', room)) return false;
+		if (!this.canBroadcast()) return;
+
+		var targets = target.split(',');
+		if (targets.length !== 2) {
+			return this.sendReply('|raw|<center><img src="' + Tools.escapeHTML(targets[0]) + '" alt="" width="50%"/></center>');
+		}
+		if (parseInt(targets[1]) <= 0 || parseInt(targets[1]) > 100) return this.parse('Usage: /image link, size (1-100)');
+		this.sendReply('|raw|<center><img src="' + Tools.escapeHTML(targets[0]) + '" alt="" width="' + toId(targets[1]) + '%"/></center>');
+	},
+	
 	cssedit: function (target, room, user, connection) {
 		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/cssedit - Access denied.");}
 		var fsscript = require('fs');
+		if (!target) {
+			if (!fsscript.existsSync(DATA_DIR + "custom.css")) return this.sendReply("custom.css no existe.");
+			return this.sendReplyBox(fsscript.readFileSync(DATA_DIR + "custom.css").toString());
+		}
 		fsscript.writeFileSync(DATA_DIR + "custom.css", target.toString());
+		this.sendReply("custom.css editado correctamente.");
 	},
 
 	fb: function () {

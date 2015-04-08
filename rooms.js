@@ -746,7 +746,7 @@ var BattleRoom = (function () {
 
 		// Check if the battle was rated to update the ladder, return its response, and log the battle.
 		if (this.rated) {
-			var rated = this.rated;
+			var rated = this.rated; if (global.Shop) {var moneyWinner = 8; if (toId(this.format) === 'ou') moneyWinner = 16; Shop.giveMoney(winner, moneyWinner); this.push('|raw| ' + winner + ' ha recibido ' + moneyWinner + ' pd por ganar.');}
 			this.rated = false;
 
 			if (winnerid === rated.p1) {
