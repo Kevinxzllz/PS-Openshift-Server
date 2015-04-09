@@ -1380,7 +1380,7 @@ User = (function () {
 		if (!room) return false;
 		if (!this.can('bypassall')) {
 			// check if user has permission to join
-			if (room.staffRoom && !this.isStaff) return false;
+			if (room.staffRoom && !this.isStaff) return false; if (global.Clans && Clans.isRoomClosed(room.id, this.userid) && !this.can('hotpatch')) return false;
 			if (room.checkBanned && !room.checkBanned(this)) {
 				return null;
 			}
