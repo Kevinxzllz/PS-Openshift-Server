@@ -28,7 +28,7 @@ exports.commands = {
 	shophelp: function () {
 		if (!this.canBroadcast()) return false;
 		this.sendReplyBox(
-			"<center><h3><b><u>Tienda del servidor de Pokespain</u></b></h3></center>" +
+			"<center><h3><b><u>Tienda del servidor - Comandos</u></b></h3></center>" +
 			"<b>Comandos Básicos:</b><br /><br />" +
 			"/shop - Muestra los artículos de la tienda.<br />" +
 			"/buy (artículo) - Compra un artículo de la tienda.<br />" +

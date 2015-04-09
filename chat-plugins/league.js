@@ -1,4 +1,4 @@
-
+Ôªø
 exports.commands = {
 	/*********************************************************
 	 * League commands
@@ -10,7 +10,7 @@ exports.commands = {
 			"<center><h3><b><u>Lista de Comandos para las Ligas</u></b></h3></center>" +
 			"<br /><b>Comandos Usuales</b><br />" +
 			"/medallas [user] - Muestra las medallas con las que cuenta un usuario.<br />" +
-			"/liga [name] - Comando para mostrar la informacion m·s general de una liga (miembros y sala).<br />" +
+			"/liga [name] - Comando para mostrar la informacion m√°s general de una liga (miembros y sala).<br />" +
 			"/darmedalla [user] - Entrega una medalla como miembro de una liga.<br />"  +
 			"/quitarmedalla [user] - Retira una medalla como miembro de una liga.<br />" +
 			"<br /><b>Comandos Administrativos</b><br />" +
@@ -51,7 +51,7 @@ exports.commands = {
 		var params = target.split(',');
 		if (!params || params.length < 5) return this.sendReply("Usage: /addmedal [id], [name], [width], [height], [image]");
 		if (League.newMedal(params[0], params[1], params[4], params[2], params[3])) return this.sendReply("Medalla: " + toId(params[0]) + " creada con exito.");
-		this.sendReply("La medalla especificada ya existÌa.");
+		this.sendReply("La medalla especificada ya exist√≠a.");
 	},
 	
 	deletemedal: function (target, room, user) {
@@ -123,7 +123,7 @@ exports.commands = {
 	liga: function (target, room, user) {
 		if (!this.canBroadcast()) return false;
 		var leagueId = League.findLeague(target, room.id);
-		if (!leagueId) return this.sendReply("La liga especificada no est· registrada en el servidor.");
+		if (!leagueId) return this.sendReply("La liga especificada no est√° registrada en el servidor.");
 		return this.sendReplyBox(League.getLeagueTable(leagueId));
 	},
 	
@@ -139,7 +139,7 @@ exports.commands = {
 		var params = target.split(',');
 		if (!params || params.length < 3) return this.sendReply("Usage: /addleague [id], [name], [room]");
 		if (League.newLeague(params[0], params[1], params[2])) return this.sendReply("Liga: " + toId(params[0]) + " creada con exito.");
-		this.sendReply("La liga especificada ya existÌa.");
+		this.sendReply("La liga especificada ya exist√≠a.");
 	},
 	
 	deleteleague: function (target, room, user) {
@@ -196,20 +196,20 @@ exports.commands = {
 		var params = target.split(',');
 		if (params.length === 1) {
 			var userT = Users.get(params[0]);
-			if (!userT) return this.sendReply('El usuario ' + toId(target) + ' no existe o no est· disponible.');
+			if (!userT) return this.sendReply('El usuario ' + toId(target) + ' no existe o no est√° disponible.');
 			var medalId = League.findMedal(user.name);
 			if (!medalId) return this.sendReply('No estas registrado como miembro de ninguna liga.');
 			if (League.findLeagueFromRoom(room.id) !== League.findLeagueFromLeader(user.userid)) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
 			var medalData = League.getMedalData(medalId);
-			if (!League.giveMedal(medalId, params[0])) return this.sendReply('El usuario ya poseÌa la medalla que intentas entregar.');
+			if (!League.giveMedal(medalId, params[0])) return this.sendReply('El usuario ya pose√≠a la medalla que intentas entregar.');
 			userT.popup(user.name + " te ha entregado la siguiente medalla: " + medalData.name + "\nRecuerda que puedes comproar tus medallas con el comando /medallas");
 			this.addModCommand(user.name + " ha entregado su medalla (" + medalData.name + ") a " + toId(target) + '.');
 			return;
 		} else if(params.length > 1){
 			if (!this.can('league')) return false;
 			var userT = Users.get(params[0]);
-			if (!userT) return this.sendReply('El usuario ' + toId(params[0]) + ' no existe o no est· disponible.');
-			if (!League.giveMedal(params[1], params[0])) return this.sendReply('El usuario ya poseÌa dicha medalla o el Id es incorrecto.');
+			if (!userT) return this.sendReply('El usuario ' + toId(params[0]) + ' no existe o no est√° disponible.');
+			if (!League.giveMedal(params[1], params[0])) return this.sendReply('El usuario ya pose√≠a dicha medalla o el Id es incorrecto.');
 			return this.sendReply('Medalla (' + League.getMedalData(params[1]).name + ') entregada a ' + toId(params[0]) + '.');
 		}
 		return this.sendReply('Usage: /darmedalla [user], (id)');
@@ -223,12 +223,12 @@ exports.commands = {
 			var medalId = League.findMedal(user.name);
 			if (!medalId) return this.sendReply('No estas registrado como miembro de ninguna liga.');
 			if (League.findLeagueFromRoom(room.id) !== League.findLeagueFromLeader(user.userid)) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
-			if (!League.removeMedal(medalId, params[0])) return this.sendReply('El usuario ya poseÌa la medalla que intentas entregar.');
+			if (!League.removeMedal(medalId, params[0])) return this.sendReply('El usuario ya pose√≠a la medalla que intentas entregar.');
 			this.addModCommand(user.name + " ha retirado su medalla a " + toId(target) + '.');
 			return;
 		} else if(params.length > 1){
 			if (!this.can('league')) return false;
-			if (!League.removeMedal(params[1], params[0])) return this.sendReply('El usuario no poseÌa dicha medalla o el Id es incorrecto.');
+			if (!League.removeMedal(params[1], params[0])) return this.sendReply('El usuario no pose√≠a dicha medalla o el Id es incorrecto.');
 			return this.sendReply('Medalla (' + League.getMedalData(params[1]).name + ') retirada a ' + toId(params[0]) + '.');
 		}
 		return this.sendReply('Usage: /quitarmedalla [user], (id)');
