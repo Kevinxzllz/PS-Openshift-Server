@@ -481,9 +481,9 @@ var commands = exports.commands = {
 		for (var i in targets) {
 			var isNotSearch = false;
 			target = targets[i].trim().toLowerCase();
-			if (target.slice(0, 1) === '!') {
+			if (target.charAt(0) === '!') {
 				isNotSearch = true;
-				target = target.slice(1);
+				target = target.substr(1);
 			}
 
 			var targetAbility = Tools.getAbility(targets[i]);
@@ -519,9 +519,7 @@ var commands = exports.commands = {
 			}
 
 			if (target === 'all') {
-				if (this.broadcasting) {
-					return this.sendReplyBox("A search with the parameter 'all' cannot be broadcast.");
-				}
+				if (this.broadcasting) return this.sendReplyBox("A search with the parameter 'all' cannot be broadcast.");
 				showAll = true;
 				continue;
 			}
@@ -549,7 +547,7 @@ var commands = exports.commands = {
 			}
 
 			if (target.indexOf(' type') > -1) {
-				target = target.charAt(0).toUpperCase() + target.slice(1, target.indexOf(' type'));
+				target = target.charAt(0).toUpperCase() + target.substring(1, target.indexOf(' type'));
 				if (target in Tools.data.TypeChart) {
 					if (!searches['types']) searches['types'] = {};
 					if (Object.count(searches['types'], true) === 2 && !isNotSearch) return this.sendReplyBox("Specify a maximum of two types.");
@@ -735,7 +733,7 @@ var commands = exports.commands = {
 					break;
 
 				default:
-					return this.sendReplyBox("Something broke! PM TalkTakesTime here or on the Smogon forums with the command you tried.");
+					return this.sendReplyBox("Something broke! PM SolarisFox here or on the Smogon forums with the command you tried.");
 			}
 		}
 
@@ -746,12 +744,12 @@ var commands = exports.commands = {
 		});
 		var resultsStr = "";
 		if (results.length > 0) {
-			if (showAll || results.length <= output) {
+			if (showAll || results.length <= output + 5) {
 				results.sort();
 				resultsStr = results.join(", ");
 			} else {
 				results.randomize();
-				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. Redo the search with 'all' as a search parameter to show all results.";
+				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
 			}
 		} else {
 			resultsStr = "No Pokémon found.";
@@ -781,11 +779,11 @@ var commands = exports.commands = {
 			target = targets[i].toLowerCase().trim();
 			if (target.charAt(0) === '!') {
 				isNotSearch = true;
-				target = target.slice(1);
+				target = target.substr(1);
 			}
 
 			if (target.indexOf(' type') > -1) {
-				target = target.charAt(0).toUpperCase() + target.slice(1, target.indexOf(' type'));
+				target = target.charAt(0).toUpperCase() + target.substring(1, target.indexOf(' type'));
 				if (!(target in Tools.data.TypeChart)) return this.sendReplyBox("Type '" + Tools.escapeHTML(target) + "' not found.");
 				if (!searches['type']) searches['type'] = {};
 				if ((searches['type'][target] && isNotSearch) || (searches['type'][target] === false && !isNotSearch)) return this.sendReplyBox('A search cannot both exclude and include a type.');
@@ -809,9 +807,7 @@ var commands = exports.commands = {
 			}
 
 			if (target === 'all') {
-				if (this.broadcasting) {
-					return this.sendReplyBox("A search with the parameter 'all' cannot be broadcast.");
-				}
+				if (this.broadcasting) return this.sendReplyBox("A search with the parameter 'all' cannot be broadcast.");
 				showAll = true;
 				continue;
 			}
@@ -1068,12 +1064,12 @@ var commands = exports.commands = {
 			results.push(dex[move].name);
 		}
 		if (results.length > 0) {
-			if (showAll || results.length <= output) {
+			if (showAll || results.length <= output + 5) {
 				results.sort();
 				resultsStr = results.join(", ");
 			} else {
 				results.randomize();
-				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. Redo the search with 'all' as a search parameter to show all results.";
+				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
 			}
 		} else {
 			resultsStr = "No moves found.";
@@ -1437,6 +1433,11 @@ var commands = exports.commands = {
 			buffer += "- <a href=\"https://www.smogon.com/tiers/om/\">Other Metagames Hub</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3505031/\">Other Metagames Index</a><br />";
 		}
+		if (target === 'all' || target === 'anythinggoes' || target === 'ag') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523229/\">Anything Goes</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3535064/\">Anything Goes Viability Ranking</a><br />";
+		}
 		if (target === 'all' || target === 'smogondoublesuu' || target === 'doublesuu') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3516968/\">Doubles UU</a><br />";
@@ -1458,7 +1459,7 @@ var commands = exports.commands = {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3489849/\">Balanced Hackmons</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3515725/\">Balanced Hackmons Suspect Discussion</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525676/\">Balanced Hackmons Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525676/\">Balanced Hackmons Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === '1v1') {
 			matched = true;
@@ -1469,13 +1470,13 @@ var commands = exports.commands = {
 			matched = true;
 			if (target !== 'all') buffer += "All Pokémon on a team must share a type.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3493087/\">Monotype</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3517737/\">Monotype Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3517737/\">Monotype Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'tiershift' || target === 'ts') {
 			matched = true;
 			if (target !== 'all') buffer += "Pokémon below OU/BL get all their stats boosted. UU/BL2 get +5, RU/BL3 get +10, and NU or lower get +15.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3532973/\">Tier Shift</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3514386/\">Tier Shift Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3514386/\">Tier Shift Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'pu') {
 			matched = true;
@@ -1491,21 +1492,17 @@ var commands = exports.commands = {
 			matched = true;
 			if (target !== 'all') buffer += "Pokémon can use any ability, barring the few that are banned.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3528058/\">Almost Any Ability</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3517258/\">Almost Any Ability Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3517258/\">Almost Any Ability Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'stabmons') {
 			matched = true;
 			if (target !== 'all') buffer += "Pokémon can use any move of their typing, in addition to the moves they can normally learn.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3493081/\">STABmons</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3512215/\">STABmons Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3512215/\">STABmons Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'lcuu') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523929/\">LC UU</a><br />";
-		}
-		if (target === 'all' || target === '350cup') {
-			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3512945/\">350 Cup</a><br />";
 		}
 		if (target === 'all' || target === 'averagemons') {
 			matched = true;
@@ -1720,46 +1717,42 @@ var commands = exports.commands = {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3521201/\">OU Metagame Discussion</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/ou/\">OU Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526596/\">OU Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526596/\">OU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'ubers' || target === 'uber') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522911/\">Ubers Metagame Discussion</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523419/\">Ubers Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523419/\">Ubers Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'underused' || target === 'uu') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3530610/\">np: UU Stage 2.1</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/uu/\">UU Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523649/\">UU Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523649/\">UU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'rarelyused' || target === 'ru') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3533095/\">np: RU Stage 8</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/ru/\">RU Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523627/\">RU Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523627/\">RU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'neverused' || target === 'nu') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3534671/\">np: NU Stage 5</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/nu/\">NU Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523692/\">NU Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523692/\">NU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'littlecup' || target === 'lc') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3505710/\">LC Metagame Discussion</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3490462/\">LC Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3496013/\">LC Viability Rankings</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3496013/\">LC Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'smogondoubles' || target === 'doubles') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525739/\">np: Doubles Stage 1.5</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3498688/\">Doubles Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522814/\">Doubles Viability Rankings</a><br />";
-		}
-		if (target === 'all' || target === 'anythinggoes' || target === 'ag') {
-			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523229/\">Anything Goes</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522814/\">Doubles Viability Ranking</a><br />";
 		}
 		if (!matched) {
 			return this.sendReply("The Tiers entry '" + target + "' was not found. Try /tiers for general help.");

@@ -1078,7 +1078,7 @@ exports.BattleScripts = {
 					if (move.type === 'Water') counter['torrent']++;
 					if (move.type === 'Normal') {
 						counter['ate']++;
-						if (hasAbility['Refrigerate'] || hasAbility['Pixilate'] || hasAbility['Aerilate']) hasStab = true;
+						if (hasAbility['Aerilate'] || hasAbility['Pixilate'] || hasAbility['Refrigerate']) hasStab = true;
 					}
 					if (move.flags['bite']) counter['bite']++;
 					if (move.flags['punch']) counter['ironfist']++;
@@ -1278,11 +1278,11 @@ exports.BattleScripts = {
 				case 'gigadrain':
 					if ((!setupType && hasMove['leafstorm']) || hasMove['petaldance']) rejected = true;
 					break;
+				case 'leafblade': case 'seedbomb': case 'woodhammer':
+					if (hasMove['gigadrain'] && setupType !== 'Physical') rejected = true;
+					break;
 				case 'leafstorm':
 					if (setupType && hasMove['gigadrain']) rejected = true;
-					break;
-				case 'seedbomb': case 'woodhammer':
-					if (hasMove['gigadrain'] && setupType !== 'Physical') rejected = true;
 					break;
 				case 'bonemerang': case 'precipiceblades':
 					if (hasMove['earthquake']) rejected = true;
@@ -1324,7 +1324,7 @@ exports.BattleScripts = {
 					if (hasMove['ironhead']) rejected = true;
 					break;
 				case 'hydropump':
-					if (hasMove['razorshell'] || hasMove['waterfall'] || hasMove['scald'] || (hasMove['rest'] && hasMove['sleeptalk'])) rejected = true;
+					if (hasMove['razorshell'] || hasMove['scald'] || hasMove['waterfall'] || (hasMove['rest'] && hasMove['sleeptalk'])) rejected = true;
 					break;
 				case 'originpulse': case 'surf':
 					if (hasMove['hydropump'] || hasMove['scald']) rejected = true;
@@ -1434,11 +1434,11 @@ exports.BattleScripts = {
 						}
 						if (replace) moves.splice(damagingMoveIndex[damagingid], 1);
 					}
-				} else if (damagingMoves.length === 2) {
+				} else if (damagingMoves.length === 2 && !hasStab) {
 					// If you have two attacks, neither is STAB, and the combo isn't Electric/Ice or Fighting/Ghost, reject one of them at random.
 					var type1 = damagingMoves[0].type, type2 = damagingMoves[1].type;
 					var typeCombo = [type1, type2].sort().join('/');
-					if (!hasStab && typeCombo !== 'Electric/Ice' && typeCombo !== 'Fighting/Ghost') {
+					if (typeCombo !== 'Electric/Ice' && typeCombo !== 'Fighting/Ghost') {
 						var rejectableMoves = [];
 						var baseDiff = movePool.length - availableHP;
 						if (baseDiff || availableHP && (!hasMove['hiddenpower'] || damagingMoves[0].id === 'hiddenpower')) {
@@ -1451,8 +1451,9 @@ exports.BattleScripts = {
 							moves.splice(rejectableMoves[this.random(rejectableMoves.length)], 1);
 						}
 					}
-				} else if (!hasStab) {
+				} else if (!hasStab || ((hasAbility['Aerilate'] || hasAbility['Pixilate'] || hasAbility['Refrigerate']) && !counter['ate'])) {
 					// If you have three or more attacks, and none of them are STAB, reject one of them at random.
+					// Alternatively, if you have an -ate ability and no Normal moves, reject an attack move at random.
 					var rejectableMoves = [];
 					var baseDiff = movePool.length - availableHP;
 					for (var l = 0; l < damagingMoves.length; l++) {
@@ -1473,26 +1474,6 @@ exports.BattleScripts = {
 			delete hasMove[this.getMove(moves[3]).id];
 			moves[3] = 'technoblast';
 			hasMove['technoblast'] = true;
-		}
-		if (template.id === 'altariamega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'return';
-			hasMove['return'] = true;
-		}
-		if (template.id === 'gardevoirmega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'hypervoice';
-			hasMove['hypervoice'] = true;
-		}
-		if (template.id === 'salamencemega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'return';
-			hasMove['return'] = true;
-		}
-		if (template.id === 'sylveon' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'hypervoice';
-			hasMove['hypervoice'] = true;
 		}
 		if (template.requiredMove && !hasMove[toId(template.requiredMove)]) {
 			delete hasMove[this.getMove(moves[3]).id];
@@ -1807,7 +1788,7 @@ exports.BattleScripts = {
 			Diancie: 77, Metagross: 77, Sableye: 77,
 
 			// Holistic judgment
-			Articuno: 81, Ninetales: 79, Politoed: 79, Regigigas: 81, Sigilyph: 79, Unown: 85
+			Ninetales: 79, Politoed: 79, Unown: 85, Wobbuffet: 79
 		};
 		var level = levelScale[template.tier] || 90;
 		if (customScale[template.name]) level = customScale[template.name];
@@ -2675,11 +2656,11 @@ exports.BattleScripts = {
 						}
 						if (replace) moves.splice(damagingMoveIndex[damagingid], 1);
 					}
-				} else if (damagingMoves.length === 2) {
+				} else if (damagingMoves.length === 2 && !hasStab) {
 					// If you have two attacks, neither is STAB, and the combo isn't Ice/Electric or Ghost/Fighting, reject one of them at random.
 					var type1 = damagingMoves[0].type, type2 = damagingMoves[1].type;
 					var typeCombo = [type1, type2].sort().join('/');
-					if (!hasStab && typeCombo !== 'Electric/Ice' && typeCombo !== 'Fighting/Ghost') {
+					if (typeCombo !== 'Electric/Ice' && typeCombo !== 'Fighting/Ghost') {
 						var rejectableMoves = [];
 						var baseDiff = movePool.length - availableHP;
 						if (baseDiff || availableHP && (!hasMove['hiddenpower'] || damagingMoves[0].id === 'hiddenpower')) {
@@ -2692,8 +2673,9 @@ exports.BattleScripts = {
 							moves.splice(rejectableMoves[this.random(rejectableMoves.length)], 1);
 						}
 					}
-				} else if (!hasStab) {
+				} else if (!hasStab || ((hasAbility['Aerilate'] || hasAbility['Pixilate'] || hasAbility['Refrigerate']) && !counter['ate'])) {
 					// If you have three or more attacks, and none of them are STAB, reject one of them at random.
+					// Alternatively, if you have an -ate ability and no Normal moves, reject an attack move at random.
 					var rejectableMoves = [];
 					var baseDiff = movePool.length - availableHP;
 					for (var l = 0; l < damagingMoves.length; l++) {
@@ -2714,26 +2696,6 @@ exports.BattleScripts = {
 			delete hasMove[this.getMove(moves[3]).id];
 			moves[3] = 'technoblast';
 			hasMove['technoblast'] = true;
-		}
-		if (template.id === 'altariamega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'return';
-			hasMove['return'] = true;
-		}
-		if (template.id === 'gardevoirmega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'hypervoice';
-			hasMove['hypervoice'] = true;
-		}
-		if (template.id === 'salamencemega' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'return';
-			hasMove['return'] = true;
-		}
-		if (template.id === 'sylveon' && !counter['ate']) {
-			delete hasMove[this.getMove(moves[3]).id];
-			moves[3] = 'hypervoice';
-			hasMove['hypervoice'] = true;
 		}
 		if (template.id === 'meloettapirouette' && !hasMove['relicsong']) {
 			delete hasMove[this.getMove(moves[3]).id];
@@ -3041,7 +3003,7 @@ exports.BattleScripts = {
 			// Holistic judgment. Don't boost Protean as much as Parental Bond
 			bst += 0.3 * (evs.atk > evs.spa ? template.baseStats.atk : template.baseStats.spa);
 		} else if (templateAbility === 'Fur Coat') {
-			bst += template.baseStats.def ;
+			bst += template.baseStats.def;
 		}
 		if (item === 'Eviolite') {
 			bst += 0.5 * (template.baseStats.def + template.baseStats.spd);
@@ -3685,7 +3647,7 @@ exports.BattleScripts = {
 				baseSignatureMove: 'detect', signatureMove: "Audioshield",
 				evs: {hp:252, spa:252, spe:4}, nature: 'Modest'
 			},
-			'%birkal': {
+			'%Birkal': {
 				species: 'Rotom-Fan', ability: 'Magic Guard', item: 'Choice Scarf', gender: 'M',
 				moves: ['trick', 'aeroblast', ['discharge', 'partingshot', 'recover', 'tailglow'][this.random(4)]],
 				baseSignatureMove: 'quickattack', signatureMove: "Caw",
@@ -3697,13 +3659,19 @@ exports.BattleScripts = {
 				baseSignatureMove: 'spikecannon', signatureMove: "Lava Whip",
 				evs: {atk:252, def:4, spe:252}, nature: 'Adamant'
 			},
+			'%Charles Carmichael': {
+				species: 'Quagsire', ability: 'Sap Sipper', item: 'Liechi Berry', gender: 'M',
+				moves: ['waterfall', 'earthquake', ['stoneedge', 'rockslide'][this.random(2)], 'icepunch'],
+				baseSignatureMove: 'swagger', signatureMove: 'Bad Pun',
+				evs: {hp:248, atk:252, spe:8}, nature: 'Naughty'
+			},
 			'%Crestfall': {
 				species: 'Darkrai', ability: 'Parental Bond', item: 'Lum Berry', gender: 'M',
 				moves: ['darkpulse', 'icebeam', 'oblivionwing'],
 				baseSignatureMove: 'protect', signatureMove: "Final",
 				evs: {spa:252, def:4, spe:252}, nature: 'Modest'
 			},
-			'%dtc': {
+			'%DTC': {
 				species: 'Charizard', ability: 'Magic Guard', item: 'Charizardite X', gender: 'M',
 				moves: ['shiftgear', 'blazekick', 'roost'],
 				baseSignatureMove: 'dragonrush', signatureMove: "Dragon Smash",
@@ -3739,7 +3707,13 @@ exports.BattleScripts = {
 				baseSignatureMove: 'bulletpunch', signatureMove: "Focus Laser",
 				evs: {hp:4, spa:252, spe:252}, nature: 'Timid'
 			},
-			'%Raseri': {
+			'%QuoteCS': {
+				species: 'Skarmory', ability: 'Adaptability', item: 'Life Orb', gender: 'M',
+				moves: ['meteormash', ['bravebird', 'dragonascent'][this.random(2)], 'roost'],
+				baseSignatureMove: 'spikes', signatureMove: "Diversify",
+				evs: {hp:248, atk:252, spe:8}, nature: 'Adamant'
+			},
+			'%raseri': {
 				species: 'Prinplup', ability: 'Regenerator', item: 'Eviolite', gender: 'M',
 				moves: ['defog', 'stealthrock', 'toxic', 'roar', 'bravebird'],
 				baseSignatureMove: 'scald', signatureMove: "Ban Scald",

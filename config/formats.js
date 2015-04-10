@@ -149,7 +149,7 @@ exports.Formats = [
 		ruleset: ['PotD', 'Pokemon', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
-		name: "Smogon Doubles",
+		name: "Doubles OU",
 		section: "ORAS Doubles",
 
 		gameType: 'doubles',
@@ -159,7 +159,7 @@ exports.Formats = [
 		]
 	},
 	{
-		name: "Smogon Doubles Ubers",
+		name: "Doubles Ubers",
 		section: "ORAS Doubles",
 
 		gameType: 'doubles',
@@ -167,11 +167,11 @@ exports.Formats = [
 		banlist: ['Unreleased', 'Illegal', 'Dark Void']
 	},
 	{
-		name: "Smogon Doubles UU",
+		name: "Doubles UU",
 		section: "ORAS Doubles",
 
 		gameType: 'doubles',
-		ruleset: ['Smogon Doubles'],
+		ruleset: ['Doubles OU'],
 		banlist: ['Aegislash', 'Amoonguss', 'Azumarill', 'Bisharp', 'Breloom', 'Chandelure', 'Charizard', 'Conkeldurr',
 		'Cresselia', 'Deoxys-Attack', 'Diancie', 'Dragonite', 'Excadrill', 'Ferrothorn', 'Garchomp', 'Gardevoir',
 		'Gengar', 'Greninja', 'Gyarados', 'Heatran', 'Hitmontop', 'Hydreigon', 'Kangaskhan', 'Keldeo',
@@ -1446,10 +1446,13 @@ exports.Formats = [
 				}
 			}
 			if (name === 'birkal') {
-				this.add('c|%birkal|caw');
+				this.add('c|%Birkal|caw');
 			}
 			if (name === 'bloobblob') {
 				this.add('c|%bloobblob|Contract?');
+			}
+			if (name === 'charlescarmichael') {
+				this.add('c|%Charles Carmichael|If Taylor Swift were in a Fast and Furious movie, it’d be called Taylor Drift.');
 			}
 			if (name === 'crestfall') {
 				sentences = ['On wings of night.', 'Let us hunt those who have fallen to darkness.'];
@@ -1472,7 +1475,10 @@ exports.Formats = [
 				this.add('c|%Majorbling|' + sentences[this.random(3)]);
 			}
 			if (name === 'raseri') {
-				this.add('c|%Raseri|ban prinplup');
+				this.add('c|%raseri|ban prinplup');
+			}
+			if (name === 'quotecs') {
+				this.add('c|%QuoteCS|Yeah, I know what you mean, but unfortunately I lack good answers to those because of my incredibly dry personality.');
 			}
 			if (name === 'trinitrotoluene') {
 				this.add('c|%trinitrotoluene|pls no hax');
@@ -2004,10 +2010,13 @@ exports.Formats = [
 				}
 			}
 			if (name === 'birkal') {
-				this.add('c|%birkal|//birkal');
+				this.add('c|%Birkal|//birkal');
 			}
 			if (name === 'bloobblob') {
 				this.add('c|%bloobblob|I won\'t die! Even if I\'m killed!');
+			}
+			if (name === 'charlescarmichael') {
+				this.add('c|%Charles Carmichael|The Grandmaster of Puns will be back for revenge!');
 			}
 			if (name === 'crestfall') {
 				this.add('c|%Crestfall|Vayne [All Chat]: Outplayed me gg no re');
@@ -2025,7 +2034,10 @@ exports.Formats = [
 				this.add('c|%Majorbling|There is literally no way to make this pokemon good...(ゞ๑T  ˳̫T\'๑) ');
 			}
 			if (name === 'raseri') {
-				this.add('c|%Raseri|banned');
+				this.add('c|%raseri|banned');
+			}
+			if (name === 'quotecs') {
+				this.add('c|%QuoteCS|#StillIrrelevant');
 			}
 			if (name === 'trinitrotoluene') {
 				this.add('c|%trinitrotoluene|why hax @_@');
@@ -3009,6 +3021,13 @@ exports.Formats = [
 					}
 				};
 			}
+			if (move.id === 'headcharge' && name === 'rekeri') {
+				move.name = 'Land Before Time';
+				move.basePower = 125;
+				move.type = 'Rock';
+				move.accuracy = 90;
+				move.secondaries = [{chance:10, volatileStatus:'flinch'}];
+			}
 			if (move.id === 'stockpile' && name === 'relados') {
 				move.name = 'Loyalty';
 				move.type = 'Fire';
@@ -3206,6 +3225,26 @@ exports.Formats = [
 					this.add('-anim', source, "Close Combat", target);
 				};
 			}
+			if (move.id === 'rockthrow' && name === 'timbuktu') {
+				move.name = 'Geoblast';
+				move.type = 'Fire';	// Not the other way round or STAB would be lost.
+				move.category = 'Special';
+				move.accuracy = true;
+				move.basePowerCallback = function (source, target) {
+					return (40 * Math.pow(2, source.timesGeoblastUsed));
+				};
+				move.onEffectiveness = function (typeMod, type, move) {
+					return typeMod + this.getEffectiveness('Rock', type);
+				};
+				move.onTryHit = function (target, source) {
+					this.attrLastMove('[still]');
+					this.add('-anim', source, "Fire Blast", source);
+					this.add('-anim', source, "Power Gem", target);
+				};
+				move.onHit = function (target, source) {
+					source.timesGeoblastUsed++;
+				};
+			}
 			if (move.id === 'naturepower' && name === 'trickster') {
 				move.name = 'Cometstorm';
 				move.category = 'Special';
@@ -3360,6 +3399,12 @@ exports.Formats = [
 					this.add('-anim', source, "Tail Slap", target);
 				};
 			}
+			if (move.id === 'swagger' && name === 'charlescarmichael') {
+				move.name = 'Bad Pun';
+				move.onHit = function (pokemon) {
+					pokemon.addVolatile('taunt');
+				};
+			}
 			if (move.id === 'protect' && name === 'crestfall') {
 				move.name = 'Final Hour';
 				move.onTryHit = function (pokemon) {
@@ -3435,7 +3480,7 @@ exports.Formats = [
 				move.basePower = 90;
 				move.critRatio = 2;
 			}
-			if (name === 'majorbling' && move.id === 'bulletpunch') {
+			if (move.id === 'bulletpunch' && name === 'majorbling') {
 				move.name = 'Focus Laser';
 				move.type = 'Electric';
 				move.category = 'Status';
@@ -3467,31 +3512,12 @@ exports.Formats = [
 				delete move.secondaries;
 				move.status = 'brn';
 			}
-			if (move.id === 'headcharge' && name === 'rekeri') {
-				move.name = 'Land Before Time';
-				move.basePower = 125;
-				move.type = 'Rock';
-				move.accuracy = 90;
-				move.secondaries = [{chance:10, volatileStatus:'flinch'}];
-			}
-			if (move.id === 'rockthrow' && name === 'timbuktu') {
-				move.name = 'Geoblast';
-				move.type = 'Fire';	// Not the other way round or STAB would be lost.
-				move.category = 'Special';
-				move.accuracy = true;
-				move.basePowerCallback = function (source, target) {
-					return (40 * Math.pow(2, source.timesGeoblastUsed));
-				};
-				move.onEffectiveness = function (typeMod, type, move) {
-					return typeMod + this.getEffectiveness('Rock', type);
-				};
+			if (move.id === 'spikes' && name === 'quotecs') {
+				move.name = 'Diversify';
+				move.self = {boosts: {atk:1, spd:1}};
 				move.onTryHit = function (target, source) {
 					this.attrLastMove('[still]');
-					this.add('-anim', source, "Fire Blast", source);
-					this.add('-anim', source, "Power Gem", target);
-				};
-				move.onHit = function (target, source) {
-					source.timesGeoblastUsed++;
+					this.add('-anim', source, "Eruption", source);
 				};
 			}
 			if (move.id === 'explosion' && name === 'trinitrotoluene') {
@@ -3885,22 +3911,6 @@ exports.Formats = [
 			'Munchlax', 'Onix', 'Pancham', 'Pawniard', 'Ponyta', 'Porygon', 'Pumpkaboo-Super', 'Scraggy', 'Slowpoke', 'Snivy',
 			'Snubbull', 'Spritzee', 'Staryu', 'Surskit', 'Timburr', 'Tirtouga', 'Vullaby', 'Vulpix', 'Zigzagoon', 'Shell Smash'
 		]
-	},
-	{
-		name: "350 Cup",
-		section: "Other Metagames",
-
-		mod: '350cup',
-		searchShow: false,
-		ruleset: ['Ubers', 'Evasion Moves Clause'],
-		banlist: ['Abra', 'Cranidos', 'Darumaka', 'Gastly', 'Pawniard', 'Smeargle', 'Spritzee', 'DeepSeaScale', 'DeepSeaTooth', 'Light Ball', 'Thick Club'],
-		validateSet: function (set) {
-			var template = Tools.getTemplate(set.species);
-			var item = this.getItem(set.item);
-			if (item.name === 'Eviolite' && Object.values(template.baseStats).sum() <= 350) {
-				return ['Eviolite is banned on Pokémon with 350 or lower BST.'];
-			}
-		}
 	},
 	{
 		name: "Averagemons",
@@ -4359,7 +4369,7 @@ exports.Formats = [
 	///////////////////////////////////////////////////////////////////
 
 	{
-		name: "[Gen 5] Smogon Doubles",
+		name: "[Gen 5] Doubles OU",
 		section: 'BW2 Doubles',
 		column: 4,
 
