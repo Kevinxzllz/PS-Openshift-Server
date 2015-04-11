@@ -123,7 +123,7 @@ exports.commands = {
 			case 'avatar':
 				prize = 1000;
 				if (Shop.getUserMoney(user.name) < prize) return this.sendReply("No tienes suficiente dinero.");
-				if (!Config.customAvatars[user.userid]) return this.sendReply("No tenías un avatar personalizado.");
+				if (!Config.customavatars[user.userid]) return this.sendReply("No tenías un avatar personalizado.");
 				if (params.length !== 2) return this.sendReply("Usa el comando así: /buy avatar,[imagen]");
 				var err = Shop.addPendingAvatar(user.userid, params[1]);
 				if (err) return this.sendReply(err);
@@ -133,7 +133,7 @@ exports.commands = {
 			case 'customavatar':
 				prize = 6000;
 				if (Shop.getUserMoney(user.name) < prize) return this.sendReply("No tienes suficiente dinero.");
-				if (Config.customAvatars[user.userid]) return this.sendReply("Ya habías comprado este artículo. Para cambiar tu avatar compra la opcion Avatar");
+				if (Config.customavatars[user.userid]) return this.sendReply("Ya habías comprado este artículo. Para cambiar tu avatar compra la opcion Avatar");
 				if (params.length !== 2) return this.sendReply("Usa el comando así: /buy avatar,[imagen]");
 				var err = Shop.addPendingAvatar(user.userid, params[1]);
 				if (err) return this.sendReply(err);

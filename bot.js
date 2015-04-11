@@ -60,7 +60,7 @@ if (!botBannedWords.links) {
 }
 
 var config = {
-	name: 'Bot',
+	name: 'LumenBoTTT',
 	userid: function () {
 		return toId(this.name);
 	},
@@ -943,5 +943,5 @@ exports.config = config;
 exports.parse = parse;
 exports.commands = commands;
 
-joinServer();
+//joinServer();
 //initProgModChat();
