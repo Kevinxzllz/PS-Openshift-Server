@@ -602,7 +602,7 @@
 		else {
 			clanUser = Clans.findClanFromMember(user.name);
 			userk.popup(user.name + " te ha invitado a unirte al clan " + clanUser + ".\nPara unirte al clan escribe en el chat /aceptarclan " + clanUser);
-			this.addModCommand(userk.name + " ha sido invitado a unirse al clan " + clanUser + " por " + user.name);
+			this.addRaw(userk.name + " ha sido invitado a unirse al clan " + clanUser + " por " + user.name);
 		}
 	},
 	aceptarclan: function (target, room, user) {
