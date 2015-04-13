@@ -706,9 +706,8 @@ User = (function () {
 			delete prevUsers[userid];
 			prevUsers[this.userid] = userid;
 
-			// also MMR is different for each userid
+			// MMR is different for each userid
 			this.mmrCache = {};
-
 			Rooms.global.cancelSearch(this);
 
 			delete users[oldid];
@@ -768,6 +767,10 @@ User = (function () {
 			userid = toId(name);
 			if (i > 1000) return false;
 		}
+
+		// MMR is different for each userid
+		this.mmrCache = {};
+		Rooms.global.cancelSearch(this);
 
 		if (this.named) this.prevNames[this.userid] = this.name;
 		delete prevUsers[userid];

@@ -86,6 +86,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		basePower: 20
 	},
+	bugbuzz: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
+	},
 	camouflage: {
 		inherit: true,
 		desc: "The user's type changes based on the battle terrain. Ground-type in Wi-Fi battles. (In-game: Ground-type in puddles, rocky ground, and sand, Water-type on water, Rock-type in caves, Ice-type on snow and ice, and Normal-type everywhere else.) Fails if the user's type cannot be changed or if the user is already purely that type.",
@@ -110,7 +114,8 @@ exports.BattleMovedex = {
 		secondary: {
 			chance: 10,
 			volatileStatus: 'confusion'
-		}
+		},
+		flags: {protect: 1, mirror: 1, sound: 1, distance: 1}
 	},
 	clamp: {
 		inherit: true,
@@ -182,6 +187,10 @@ exports.BattleMovedex = {
 	dragonpulse: {
 		inherit: true,
 		basePower: 90
+	},
+	echoedvoice: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
 	},
 	energyball: {
 		inherit: true,
@@ -278,6 +287,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		accuracy: 90
 	},
+	grasswhistle: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
+	},
 	grasspledge: {
 		inherit: true,
 		basePower: 50,
@@ -289,6 +302,10 @@ exports.BattleMovedex = {
 			return 50;
 		}
 	},
+	growl: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
+	},
 	growth: {
 		inherit: true,
 		pp: 40
@@ -296,6 +313,10 @@ exports.BattleMovedex = {
 	gunkshot: {
 		inherit: true,
 		accuracy: 70
+	},
+	healbell: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
 	},
 	healblock: {
 		inherit: true,
@@ -432,6 +453,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		basePower: 120
 	},
+	hypervoice: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
+	},
 	icebeam: {
 		inherit: true,
 		basePower: 95
@@ -479,6 +504,10 @@ exports.BattleMovedex = {
 	meanlook: {
 		inherit: true,
 		flags: {protect: 1, reflectable: 1, mirror: 1}
+	},
+	metalsound: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
 	},
 	meteormash: {
 		inherit: true,
@@ -570,6 +599,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		basePower: 140
 	},
+	perishsong: {
+		inherit: true,
+		flags: {sound: 1, distance: 1}
+	},
 	pinmissile: {
 		inherit: true,
 		accuracy: 85,
@@ -653,6 +686,10 @@ exports.BattleMovedex = {
 		target: "self",
 		type: "Bug"
 	},
+	relicsong: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
+	},
 	roar: {
 		inherit: true,
 		accuracy: 100,
@@ -663,6 +700,10 @@ exports.BattleMovedex = {
 		accuracy: 80,
 		basePower: 50,
 		pp: 10
+	},
+	round: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
 	},
 	sandtomb: {
 		inherit: true,
@@ -676,6 +717,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		thawsTarget: false
 	},
+	screech: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
+	},
 	secretpower: {
 		inherit: true,
 		onHit: function () {},
@@ -685,6 +730,10 @@ exports.BattleMovedex = {
 				accuracy: -1
 			}
 		}
+	},
+	sing: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
 	},
 	skillswap: {
 		inherit: true,
@@ -743,9 +792,14 @@ exports.BattleMovedex = {
 		inherit: true,
 		basePower: 20
 	},
+	snarl: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
+	},
 	snore: {
 		inherit: true,
-		basePower: 40
+		basePower: 40,
+		flags: {protect: 1, mirror: 1, sound: 1}
 	},
 	spore: {
 		inherit: true,
@@ -820,6 +874,10 @@ exports.BattleMovedex = {
 		inherit: true,
 		pp: 25
 	},
+	supersonic: {
+		inherit: true,
+		flags: {protect: 1, reflectable: 1, mirror: 1, sound: 1}
+	},
 	surf: {
 		inherit: true,
 		basePower: 95
@@ -865,6 +923,10 @@ exports.BattleMovedex = {
 	thunderbolt: {
 		inherit: true,
 		basePower: 95
+	},
+	uproar: {
+		inherit: true,
+		flags: {protect: 1, mirror: 1, sound: 1}
 	},
 	toxic: {
 		inherit: true,

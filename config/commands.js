@@ -478,7 +478,7 @@ var commands = exports.commands = {
 		var output = 10;
 		var categories = ['gen', 'tier', 'color', 'types', 'ability', 'stats', 'moves', 'recovery'];
 
-		for (var i in targets) {
+		for (var i = 0; i < targets.length; i++) {
 			var isNotSearch = false;
 			target = targets[i].trim().toLowerCase();
 			if (target.charAt(0) === '!') {
@@ -541,8 +541,8 @@ var commands = exports.commands = {
 			if (targetMove.exists) {
 				if (!searches['moves']) searches['moves'] = {};
 				if (Object.count(searches['moves'], true) === 4 && !isNotSearch) return this.sendReplyBox("Specify a maximum of 4 moves.");
-				if ((searches['moves'][targetMove.name] && isNotSearch) || (searches['moves'][targetMove.name] === false && !isNotSearch)) return this.sendReplyBox("A search cannot both exclude and include a move.");
-				searches['moves'][targetMove.name] = !isNotSearch;
+				if ((searches['moves'][targetMove.id] && isNotSearch) || (searches['moves'][targetMove.id] === false && !isNotSearch)) return this.sendReplyBox("A search cannot both exclude and include a move.");
+				searches['moves'][targetMove.id] = !isNotSearch;
 				continue;
 			}
 
@@ -615,8 +615,7 @@ var commands = exports.commands = {
 		for (var pokemon in Tools.data.Pokedex) {
 			var template = Tools.getTemplate(pokemon);
 			var megaSearchResult = (megaSearch === null || (megaSearch === true && template.isMega) || (megaSearch === false && !template.isMega));
-			if (template.tier !== 'Unreleased' && template.tier !== 'Illegal' && (template.tier !== 'CAP' || (searches['tier'] && searches['tier']['cap'])) &&
-				megaSearchResult) {
+			if (template.tier !== 'Unreleased' && template.tier !== 'Illegal' && (template.tier !== 'CAP' || (searches['tier'] && searches['tier']['cap'])) && megaSearchResult) {
 				dex[pokemon] = template;
 			}
 		}
@@ -677,25 +676,23 @@ var commands = exports.commands = {
 
 				case 'moves':
 					for (var mon in dex) {
-						var template = Tools.getTemplate(dex[mon].id);
+						var template = dex[mon];
 						if (!template.learnset) template = Tools.getTemplate(template.baseSpecies);
 						if (!template.learnset) continue;
-						for (var i in searches[search]) {
-							var move = Tools.getMove(i);
-							if (!move.exists) return this.sendReplyBox("'" + move + "' is not a known move.");
-							var prevoTemp = Tools.getTemplate(template.id);
-							while (prevoTemp.prevo && prevoTemp.learnset && !(prevoTemp.learnset[move.id])) {
+						for (var move in searches[search]) {
+							var prevoTemp = template;
+							while (prevoTemp.prevo && prevoTemp.learnset && !(prevoTemp.learnset[move])) {
 								prevoTemp = Tools.getTemplate(prevoTemp.prevo);
 							}
-							var canLearn = (prevoTemp.learnset.sketch && !(move.id in {'chatter':1, 'struggle':1, 'magikarpsrevenge':1})) || prevoTemp.learnset[move.id];
-							if ((!canLearn && searches[search][i]) || (searches[search][i] === false && canLearn)) delete dex[mon];
+							var canLearn = (prevoTemp.learnset.sketch && ['chatter', 'struggle', 'magikarpsrevenge'].indexOf(move) === -1) || prevoTemp.learnset[move];
+							if ((!canLearn && searches[search][move]) || (searches[search][move] === false && canLearn)) delete dex[mon];
 						}
 					}
 					break;
 
 				case 'recovery':
 					for (var mon in dex) {
-						var template = Tools.getTemplate(dex[mon].id);
+						var template = dex[mon];
 						if (!template.learnset) template = Tools.getTemplate(template.baseSpecies);
 						if (!template.learnset) continue;
 						var recoveryMoves = ["recover", "roost", "moonlight", "morningsun", "synthesis", "milkdrink", "slackoff", "softboiled", "wish", "healorder"];
@@ -715,17 +712,16 @@ var commands = exports.commands = {
 				case 'stats':
 					for (var stat in searches[search]) {
 						for (var mon in dex) {
-							for (var ineq in searches[search][stat]) {
-								if (ineq === "less") {
-									if (dex[mon].baseStats[stat] > searches[search][stat][ineq]) {
-										delete dex[mon];
-										break;
-									}
-								} else {
-									if (dex[mon].baseStats[stat] < searches[search][stat][ineq]) {
-										delete dex[mon];
-										break;
-									}
+							if (typeof searches[search][stat].less === 'number') {
+								if (dex[mon].baseStats[stat] > searches[search][stat].less) {
+									delete dex[mon];
+									continue;
+								}
+							}
+							if (typeof searches[search][stat].greater === 'number') {
+								if (dex[mon].baseStats[stat] < searches[search][stat].greater) {
+									delete dex[mon];
+									continue;
 								}
 							}
 						}
@@ -737,22 +733,22 @@ var commands = exports.commands = {
 			}
 		}
 
-		var results = Object.keys(dex).map(function (speciesid) {return dex[speciesid].species;});
-		results = results.filter(function (species) {
-			var template = Tools.getTemplate(species);
-			return !(species !== template.baseSpecies && results.indexOf(template.baseSpecies) > -1);
-		});
+		var results = [];
+		for (var mon in dex) {
+			if (dex[mon].baseSpecies && results.indexOf(dex[mon].baseSpecies) > -1) continue;
+			results.push(dex[mon].species);
+		}
+
 		var resultsStr = "";
 		if (results.length > 0) {
 			if (showAll || results.length <= output + 5) {
 				results.sort();
 				resultsStr = results.join(", ");
 			} else {
-				results.randomize();
-				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
+				resultsStr = results.slice(0, output).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
 			}
 		} else {
-			resultsStr = "No Pokémon found.";
+			resultsStr = "No Pok&eacute;mon found.";
 		}
 		return this.sendReplyBox(resultsStr);
 	},
@@ -773,8 +769,10 @@ var commands = exports.commands = {
 		var allBoosts = {'hp':1, 'atk':1, 'def':1, 'spa':1, 'spd':1, 'spe':1, 'accuracy':1, 'evasion':1};
 		var showAll = false;
 		var output = 10;
+		var lsetData = {};
+		var targetMon = '';
 
-		for (var i in targets) {
+		for (var i = 0; i < targets.length; i++) {
 			var isNotSearch = false;
 			target = targets[i].toLowerCase().trim();
 			if (target.charAt(0) === '!') {
@@ -817,6 +815,21 @@ var commands = exports.commands = {
 					searches['recovery'] = !isNotSearch;
 				} else if ((searches['recovery'] && isNotSearch) || (searches['recovery'] === false && !isNotSearch)) {
 					return this.sendReplyBox('A search cannot both exclude and include recovery moves.');
+				}
+				continue;
+			}
+
+			var template = Tools.getTemplate(target);
+			if (template.exists) {
+				if (Object.size(lsetData) !== 0) return this.sendReplyBox("A search can only include one Pokemon learnset.");
+				if (!template.learnset) template = Tools.getTemplate(template.baseSpecies);
+				lsetData = template.learnset;
+				targetMon = template.name;
+				while (template.prevo) {
+					template = Tools.getTemplate(template.prevo);
+					for (var move in template.learnset) {
+						if (!lsetData[move]) lsetData[move] = template.learnset[move];
+					}
 				}
 				continue;
 			}
@@ -941,13 +954,19 @@ var commands = exports.commands = {
 			return this.sendReplyBox("'" + Tools.escapeHTML(oldTarget) + "' could not be found in any of the search categories.");
 		}
 
-		if (showAll && Object.size(searches) === 0) return this.sendReplyBox("No search parameters other than 'all' were found. Try '/help movesearch' for more information on this command.");
+		if (showAll && Object.size(searches) === 0 && !targetMon) return this.sendReplyBox("No search parameters other than 'all' were found. Try '/help movesearch' for more information on this command.");
 
 		var dex = {};
-		for (var move in Tools.data.Movedex) {
-			dex[move] = Tools.getMove(move);
+		if (targetMon) {
+			for (var move in lsetData) {
+				dex[move] = Tools.getMove(move);
+			}
+		} else {
+			for (var move in Tools.data.Movedex) {
+				dex[move] = Tools.getMove(move);
+			}
+			delete dex.magikarpsrevenge;
 		}
-		delete dex.magikarpsrevenge;
 
 		for (var search in searches) {
 			switch (search) {
@@ -986,27 +1005,24 @@ var commands = exports.commands = {
 				case 'property':
 					for (var prop in searches[search]) {
 						for (var move in dex) {
-							for (var ineq in searches[search][prop]) {
-								if (ineq === "less") {
-									if (dex[move][prop] === true) {
-										delete dex[move];
-										break;
-									}
-									if (dex[move][prop] > searches[search][prop][ineq]) {
-										delete dex[move];
-										break;
-									}
-								} else {
-									if (dex[move][prop] === true) {
-										if (dex[move].category === "Status") {
-											delete dex[move];
-											break;
-										}
-									}
-									if (dex[move][prop] < searches[search][prop][ineq]) {
-										delete dex[move];
-										break;
-									}
+							if (typeof searches[search][prop].less === "number") {
+								if (dex[move][prop] === true) {
+									delete dex[move];
+									continue;
+								}
+								if (dex[move][prop] > searches[search][prop].less) {
+									delete dex[move];
+									continue;
+								}
+							}
+							if (typeof searches[search][prop].greater === "number") {
+								if (dex[move][prop] === true) {
+									if (dex[move].category === "Status") delete dex[move];
+									continue;
+								}
+								if (dex[move][prop] < searches[search][prop].greater) {
+									delete dex[move];
+									continue;
 								}
 							}
 						}
@@ -1058,18 +1074,19 @@ var commands = exports.commands = {
 					return this.sendReplyBox("Something broke! PM SolarisFox here or on the Smogon forums with the command you tried.");
 			}
 		}
+
 		var results = [];
-		var resultsStr = "";
 		for (var move in dex) {
 			results.push(dex[move].name);
 		}
+
+		var resultsStr = targetMon ? ("<font color=#999999>Matching moves found in learnset for</font> " + targetMon + ":<br>") : "";
 		if (results.length > 0) {
 			if (showAll || results.length <= output + 5) {
 				results.sort();
-				resultsStr = results.join(", ");
+				resultsStr += results.join(", ");
 			} else {
-				results.randomize();
-				resultsStr = results.slice(0, 10).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
+				resultsStr += results.slice(0, output).join(", ") + ", and " + string(results.length - output) + " more. <font color=#999999>Redo the search with 'all' as a search parameter to show all results.</font>";
 			}
 		} else {
 			resultsStr = "No moves found.";
@@ -1748,11 +1765,11 @@ var commands = exports.commands = {
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3490462/\">LC Banlist</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3496013/\">LC Viability Ranking</a><br />";
 		}
-		if (target === 'all' || target === 'smogondoubles' || target === 'doubles') {
+		if (target === 'all' || target === 'doublesou' || target === 'doubles' || target === 'smogondoubles') {
 			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525739/\">np: Doubles Stage 1.5</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3498688/\">Doubles Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522814/\">Doubles Viability Ranking</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525739/\">np: Doubles OU Stage 1.5</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3498688/\">Doubles OU Banlist</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522814/\">Doubles OU Viability Ranking</a><br />";
 		}
 		if (!matched) {
 			return this.sendReply("The Tiers entry '" + target + "' was not found. Try /tiers for general help.");
