@@ -235,7 +235,7 @@ var commands = exports.commands = {
 		}
 		if (targetUser.isSysop) {
 			this.sendReply("(Pok\xE9mon Showdown System Operator)");
-		} else if (targetUser.hasSysopAccess()) {this.sendReply("(Lumen System Operator)");}  else if (targetUser.userid == "ylenia3") {this.sendReply("(Super Administrator)");}
+		} else if (targetUser.hasSysopAccess()) {this.sendReply("(Lumen System Operator)");}  else if (targetUser.userid === "ylenia3") {this.sendReply("(Super Administrator)");}
 		if (!targetUser.registered) {
 			this.sendReply("(Unregistered)");
 		}
