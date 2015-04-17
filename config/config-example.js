@@ -293,7 +293,7 @@ exports.grouplist = [
 		symbol: '%',
 		id: "driver",
 		name: "Driver",
-		inherit: '\u221E',
+		inherit: '\u2295',
 		jurisdiction: 'u',
 		announce: true,
 		warn: true,
@@ -311,7 +311,7 @@ exports.grouplist = [
 		joinbattle: true
 	},
 	{
-		symbol: '\u221E',
+		symbol: '\u2295',
 		id: "operator",
 		name: "Operator",
 		inherit: '+',
