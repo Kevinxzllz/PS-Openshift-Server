@@ -249,7 +249,7 @@ exports.grouplist = [
 		disableladder: true,
 		globalonly: true,
 		tournamentsmanagement: true,
-		rank: 6
+		rank: 7
 	},
 	{
 		symbol: '#',
@@ -293,7 +293,7 @@ exports.grouplist = [
 		symbol: '%',
 		id: "driver",
 		name: "Driver",
-		inherit: '+',
+		inherit: '\u221E',
 		jurisdiction: 'u',
 		announce: true,
 		warn: true,
@@ -309,6 +309,15 @@ exports.grouplist = [
 		tournamentsmoderation: true,
 		jeopardy: true,
 		joinbattle: true
+	},
+	{
+		symbol: '\u221E',
+		id: "operator",
+		name: "Operator",
+		inherit: '+',
+		joinbattle: true,
+		tournamentsmoderation: true,
+		tournaments: true,
 	},
 	{
 		symbol: '+',

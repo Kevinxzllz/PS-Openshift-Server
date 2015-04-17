@@ -264,7 +264,7 @@ exports.commands = {
 	customsymbol: function (target, room, user) {
 		if (!Shop.symbolPermision(user.name)) return  this.sendReply('Debes comprar este comando en la tienda para usarlo.');
 		if (!target || target.length > 1) return this.parse('Debes especificar un caracter como simbolo.');
-		if (target.match(/[A-Za-z\d]+/g) || '?!$+\u2605%@\u2605&~#'.indexOf(target) >= 0) return this.sendReply('Lo sentimos, pero no puedes cambiar el símbolo al que has escogido por razones de seguridad/estabilidad.');
+		if (target.match(/[A-Za-z\d]+/g) || '?!+\u2605%@\u221E&~#'.indexOf(target) >= 0) return this.sendReply('Lo sentimos, pero no puedes cambiar el símbolo al que has escogido por razones de seguridad/estabilidad.');
 		user.getIdentity = function (roomid) {
 			var name = this.name;
 			if (this.locked) {
