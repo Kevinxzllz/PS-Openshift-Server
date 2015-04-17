@@ -163,12 +163,18 @@ exports.commands = {
 		}
 		this.sendReplyBox('Ahorros de <b>' + userName + '</b>: ' + pds + ' pd');
 	},
+	
+	tclist: function (target, room, user, connection) {
+		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/tclist - Access denied.");}
+		this.sendReplyBox(Shop.getTrainerCardList());
+	},
 
 	trainercard: 'tc',
 	tc: function (target, room, user) {
 		var autoData = false;
 		if (!target) autoData = true;
 		if (!this.canBroadcast()) return false;
+		if (room.decision) return this.sendReply('No se pueden poner TCs en las batallas.');
 
 		var pds = 0;
 		var userName = user.name;
@@ -182,12 +188,16 @@ exports.commands = {
 			if (userh) userName = userh.name;
 		}
 		if (!tcData) return this.sendReply(userName + " no tenía ninguna tarjeta de entrenador.");
-		if (tcData.customTC) return this.sendReplyBox(tcData.customHtml);
+		if (tcData.customTC) {
+			if (room.id === 'lobby') return this.sendReply('|raw|<div class="infobox infobox-limited">' + tcData.customHtml + '</div>');
+			return this.sendReplyBox(tcData.customHtml);
+		}
 		var pokeData = '<hr />';
 		for (var t in tcData.pokemon) {
 			pokeData += '<img src="http://play.pokemonshowdown.com/sprites/xyani/' + Tools.escapeHTML(Shop.getPokemonId(tcData.pokemon[t])) + '.gif" width="auto" /> &nbsp;';
 		}
 		if (tcData.nPokemon === 0) pokeData = '';
+		if (room.id === 'lobby') return this.sendReply('|raw|<div class="infobox infobox-limited"><center><h2>' + userName + '</h2><img src="' + encodeURI(tcData.image) + '" width="80" height="80" title="' + userName + '" /><br /><br /><b>"' + Tools.escapeHTML(tcData.phrase) + '"</b>' + pokeData + '</center></div>');
 		this.sendReplyBox('<center><h2>' + userName + '</h2><img src="' + encodeURI(tcData.image) + '" width="80" height="80" title="' + userName + '" /><br /><br /><b>"' + Tools.escapeHTML(tcData.phrase) + '"</b>' + pokeData + '</center>');
 	},
 

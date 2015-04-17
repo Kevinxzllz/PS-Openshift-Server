@@ -167,6 +167,12 @@ exports.removeTrainerCard = function (user) {
 	return true;
 };
 
+exports.getTrainerCardList = function () {
+	var html = 'Lista de TCs: ';
+	html += Object.keys(trainerCards).join(", ");
+	return html;
+};
+
 exports.imageTrainerCard = function (user, image) {
 	var userId = toId(user);
 	if (!trainerCards[userId]) return false;
