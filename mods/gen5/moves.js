@@ -275,7 +275,7 @@ exports.BattleMovedex = {
 					basePower: 100,
 					category: "Special",
 					flags: {},
-					affectedByImmunities: true,
+					ignoreImmunity: false,
 					type: 'Psychic'
 				}
 			};
@@ -590,8 +590,9 @@ exports.BattleMovedex = {
 		inherit: true,
 		desc: "This move calls another move for use depending on the battle terrain. Earthquake in Wi-Fi battles.",
 		shortDesc: "Attack changes based on terrain. (Earthquake)",
-		onHit: function (target) {
-			this.useMove('earthquake', target);
+		onTryHit: function () {},
+		onHit: function (pokemon) {
+			this.useMove('earthquake', pokemon);
 		},
 		target: "self"
 	},
@@ -840,7 +841,8 @@ exports.BattleMovedex = {
 				}
 				var damage = this.getDamage(source, target, move);
 				if (!damage) {
-					return null;
+					if (damage === 0) return null;
+					return false;
 				}
 				damage = this.runEvent('SubDamage', target, source, move, damage);
 				if (!damage) {

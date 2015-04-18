@@ -68,7 +68,7 @@ global.Tools = require('./tools.js');
 
 var Battle, BattleSide, BattlePokemon;
 
-var Battles = {};
+var Battles = Object.create(null);
 
 //require('./repl.js').start('battle-engine-', process.pid, function (cmd) { return eval(cmd); });
 
@@ -102,7 +102,16 @@ process.on('message', function (message) {
 			}
 		}
 	} else if (data[1] === 'dealloc') {
-		if (Battles[data[0]]) Battles[data[0]].destroy();
+		if (Battles[data[0]] && Battles[data[0]].destroy) {
+			Battles[data[0]].destroy();
+		} else {
+			var stack = '\n\n' +
+					'Additional information:\n' +
+					'message = ' + message;
+			var fakeErr = {stack: stack};
+
+			require('./crashlogger.js')(fakeErr, 'A battle');
+		}
 		delete Battles[data[0]];
 	} else {
 		var battle = Battles[data[0]];
@@ -3012,7 +3021,7 @@ Battle = (function () {
 			flags: {}
 		};
 
-		if (move.affectedByImmunities) {
+		if (!move.ignoreImmunity || (move.ignoreImmunity !== true && !move.ignoreImmunity[move.type])) {
 			if (!target.runImmunity(move.type, !suppressMessages)) {
 				return false;
 			}
@@ -3156,24 +3165,24 @@ Battle = (function () {
 			baseDamage = this.modify(baseDamage, move.stab || 1.5);
 		}
 		// types
-		var totalTypeMod = 0;
+		move.typeMod = 0;
 
 		if (target.negateImmunity[move.type] !== 'IgnoreEffectiveness' || this.getImmunity(move.type, target)) {
-			totalTypeMod = target.runEffectiveness(move);
+			move.typeMod = target.runEffectiveness(move);
 		}
 
-		totalTypeMod = this.clampIntRange(totalTypeMod, -6, 6);
-		if (totalTypeMod > 0) {
+		move.typeMod = this.clampIntRange(move.typeMod, -6, 6);
+		if (move.typeMod > 0) {
 			if (!suppressMessages) this.add('-supereffective', target);
 
-			for (var i = 0; i < totalTypeMod; i++) {
+			for (var i = 0; i < move.typeMod; i++) {
 				baseDamage *= 2;
 			}
 		}
-		if (totalTypeMod < 0) {
+		if (move.typeMod < 0) {
 			if (!suppressMessages) this.add('-resisted', target);
 
-			for (var i = 0; i > totalTypeMod; i--) {
+			for (var i = 0; i > move.typeMod; i--) {
 				baseDamage = Math.floor(baseDamage / 2);
 			}
 		}

@@ -344,6 +344,10 @@ var parse = exports.parse = function (message, room, user, connection, levelsDee
 						return false;
 					}
 				}
+				if (/>here</i.test(html) || /click here/i.test(html)) {
+					this.sendReply('Do not use "click here"');
+					return false;
+				}
 				return true;
 			},
 			targetUserOrSelf: function (target, exactName) {
@@ -384,7 +388,7 @@ var parse = exports.parse = function (message, room, user, connection, levelsDee
 					'Additional information:\n' +
 					'user = ' + user.name + '\n' +
 					'room = ' + room.id + '\n' +
-					'message = ' + message;
+					'message = ' + originalMessage;
 			var fakeErr = {stack: stack};
 
 			if (!require('./crashlogger.js')(fakeErr, 'A chat command')) {

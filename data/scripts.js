@@ -101,8 +101,8 @@ exports.BattleScripts = {
 			return true;
 		}
 
-		if (typeof move.affectedByImmunities === 'undefined') {
-			move.affectedByImmunities = (move.category !== 'Status');
+		if (move.ignoreImmunity === undefined) {
+			move.ignoreImmunity = (move.category === 'Status');
 		}
 
 		var damage = false;
@@ -209,12 +209,12 @@ exports.BattleScripts = {
 			return this.moveHit(target, pokemon, move);
 		}
 
-		if (move.affectedByImmunities && !target.runImmunity(move.type, true)) {
-			return false;
+		if (move.ignoreImmunity === undefined) {
+			move.ignoreImmunity = (move.category === 'Status');
 		}
 
-		if (typeof move.affectedByImmunities === 'undefined') {
-			move.affectedByImmunities = (move.category !== 'Status');
+		if (move.ignoreImmunity !== true && !move.ignoreImmunity[move.type] && !target.runImmunity(move.type, true)) {
+			return false;
 		}
 
 		hitResult = this.runEvent('TryHit', target, pokemon, move);
@@ -388,6 +388,7 @@ exports.BattleScripts = {
 			hitResult = true;
 		}
 		if (!hitResult) {
+			if (hitResult === false) this.add('-fail', target);
 			return false;
 		}
 
@@ -3579,11 +3580,23 @@ exports.BattleScripts = {
 				baseSignatureMove: 'naturepower', signatureMove: "Cometstorm",
 				evs: {hp:252, spa:252, spe:4}
 			},
+			'@trinitrotoluene': {
+				species: 'Metagross', ability: 'Levitate', item: 'Metagrossite', gender: 'M',
+				moves: ['meteormash', 'zenheadbutt', 'hammerarm', 'grassknot', 'earthquake', 'thunderpunch', 'icepunch', 'shiftgear'],
+				baseSignatureMove: 'explosion', signatureMove: "Get Haxed",
+				evs: {atk:252, def:4, spe:252}, nature: 'Jolly'
+			},
 			'@WaterBomb': {
 				species: 'Poliwrath', ability: 'Unaware', item: 'Leftovers', gender: 'M',
 				moves: ['heartswap', 'softboiled', 'aromatherapy', 'highjumpkick'],
 				baseSignatureMove: 'waterfall', signatureMove: "Water Bomb",
 				evs: {hp:252, atk:252, def:4}, nature: 'Adamant'
+			},
+			'@xfix': {
+				species: 'Xatu', ability: 'Magic Bounce', item: 'Focus Sash', gender: 'M',
+				moves: ['thunderwave', 'substitute', 'roost'],
+				baseSignatureMove: 'metronome', signatureMove: "(Super Glitch)",
+				evs: {hp:252, spd:252, def:4}, nature: 'Calm'
 			},
 			'@zdrup': {
 				species: 'Slowking', ability: 'Slow Start', item: 'Leftovers', gender: 'M',
@@ -3665,7 +3678,7 @@ exports.BattleScripts = {
 			'%Crestfall': {
 				species: 'Darkrai', ability: 'Parental Bond', item: 'Lum Berry', gender: 'M',
 				moves: ['darkpulse', 'icebeam', 'oblivionwing'],
-				baseSignatureMove: 'protect', signatureMove: "Final",
+				baseSignatureMove: 'protect', signatureMove: "Final Hour",
 				evs: {spa:252, def:4, spe:252}, nature: 'Modest'
 			},
 			'%DTC': {
@@ -3678,6 +3691,12 @@ exports.BattleScripts = {
 				species: 'Infernape', ability: 'Adaptability', item: 'Expert Belt', gender: 'M',
 				moves: ['highjumpkick', 'sacredfire', 'taunt', 'fusionbolt', 'machpunch'],
 				baseSignatureMove: 'firepunch', signatureMove: "Falcon Punch",
+				evs: {atk:252, def:4, spe:252}, nature: 'Jolly'
+			},
+			'%galbia': {
+				species: 'Cobalion', ability: 'Serene Grace', item: 'Leftovers',
+				moves: ['ironhead', 'taunt', 'swordsdance', 'thunderwave', 'substitute'],
+				baseSignatureMove: 'highjumpkick', signatureMove: 'Kibitz',
 				evs: {atk:252, def:4, spe:252}, nature: 'Jolly'
 			},
 			'%Hugendugen': {
@@ -3706,7 +3725,7 @@ exports.BattleScripts = {
 			},
 			'%QuoteCS': {
 				species: 'Skarmory', ability: 'Adaptability', item: 'Life Orb', gender: 'M',
-				moves: ['meteormash', ['bravebird', 'dragonascent'][this.random(2)], 'roost'],
+				moves: ['meteormash', 'bravebird', 'roost'],
 				baseSignatureMove: 'spikes', signatureMove: "Diversify",
 				evs: {hp:248, atk:252, spe:8}, nature: 'Adamant'
 			},
@@ -3716,23 +3735,11 @@ exports.BattleScripts = {
 				baseSignatureMove: 'scald', signatureMove: "Ban Scald",
 				evs: {hp:252, def:228, spd:28}, nature: 'Bold'
 			},
-			'%trinitrotoluene': {
-				species: 'Metagross', ability: 'Levitate', item: 'Metagrossite', gender: 'M',
-				moves: ['meteormash', 'zenheadbutt', 'hammerarm', 'grassknot', 'earthquake', 'thunderpunch', 'icepunch', 'shiftgear'],
-				baseSignatureMove: 'explosion', signatureMove: "Get Haxed",
-				evs: {atk:252, def:4, spe:252}, nature: 'Jolly'
-			},
 			'%uselesstrainer': {
 				species: 'Scatterbug', ability: 'Skill Link', item: 'Mail', gender: 'M',
 				moves: ['explosion', 'stringshot', 'stickyweb', 'spiderweb', 'mist'],
 				baseSignatureMove: 'bulletpunch', signatureMove: "Ranting",
 				evs: {atk:252, def:4, spe:252}, nature: 'Jolly'
-			},
-			'%xfix': {
-				species: 'Xatu', ability: 'Magic Bounce', item: 'Focus Sash', gender: 'M',
-				moves: ['thunderwave', 'substitute', 'roost'],
-				baseSignatureMove: 'metronome', signatureMove: "(Super Glitch)",
-				evs: {hp:252, spd:252, def:4}, nature: 'Calm'
 			},
 			// Voices.
 			'+Aldaron': {
@@ -3758,12 +3765,6 @@ exports.BattleScripts = {
 				moves: ['psywave', ['poisonfang', 'shadowstrike'][this.random(2)], ['uturn', 'rapidspin'][this.random(2)]],
 				baseSignatureMove: 'healingwish', signatureMove: "Be Thankful I Sacrificed Myself",
 				evs: {hp:252, def:136, spd:120}, nature: 'Impish'
-			},
-			'+imanalt': {
-				species: 'Rhydon', ability: 'Prankster', item: 'Eviolite', gender: 'M',
-				moves: ['heartswap', 'rockblast', 'stealthrock', 'substitute', 'batonpass'],
-				baseSignatureMove: 'naturepower', signatureMove: "FREE GENV BH",
-				evs: {hp:252, atk:252, spd:4}, nature: 'Adamant'
 			},
 			'+Limi': {
 				species: 'Primeape', ability: 'Poison Heal', item: 'Leftovers', gender: 'M',
