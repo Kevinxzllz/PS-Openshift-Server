@@ -197,9 +197,10 @@ exports.commands = {
 		if (params.length === 1) {
 			var userT = Users.get(params[0]);
 			if (!userT) return this.sendReply('El usuario ' + toId(target) + ' no existe o no está disponible.');
-			var medalId = League.findMedal(user.name);
-			if (!medalId) return this.sendReply('No estas registrado como miembro de ninguna liga.');
-			if (League.findLeagueFromRoom(room.id) !== League.findLeagueFromLeader(user.userid)) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
+			var league = League.findLeagueFromRoom(room.id);
+			if (!league) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
+			var medalId = League.findMedal(user.name, league);
+			if (!medalId) return this.sendReply('No estas registrado como miembro de la liga ' + league);
 			var medalData = League.getMedalData(medalId);
 			if (!League.giveMedal(medalId, params[0])) return this.sendReply('El usuario ya poseía la medalla que intentas entregar.');
 			userT.popup(user.name + " te ha entregado la siguiente medalla: " + medalData.name + "\nRecuerda que puedes comproar tus medallas con el comando /medallas");
@@ -220,9 +221,10 @@ exports.commands = {
 	if (!target) return this.sendReply('Usage: /quitarmedalla [user], (id)');
 		var params = target.split(',');
 		if (params.length === 1) {
-			var medalId = League.findMedal(user.name);
-			if (!medalId) return this.sendReply('No estas registrado como miembro de ninguna liga.');
-			if (League.findLeagueFromRoom(room.id) !== League.findLeagueFromLeader(user.userid)) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
+			var league = League.findLeagueFromRoom(room.id);
+			if (!league) return this.sendReply('Este comando solo puede ser usado en la Sala correspondiente a la liga.');
+			var medalId = League.findMedal(user.name, league);
+			if (!medalId) return this.sendReply('No estas registrado como miembro de la liga ' + league);
 			if (!League.removeMedal(medalId, params[0])) return this.sendReply('El usuario ya poseía la medalla que intentas entregar.');
 			this.addModCommand(user.name + " ha retirado su medalla a " + toId(target) + '.');
 			return;

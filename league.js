@@ -53,8 +53,15 @@ exports.getMedalData = function (medalId) {
 	};
 };
 
-exports.findMedal = function (leader) {
+exports.findMedal = function (leader, leagueid) {
 	leader = toId(leader);
+	if (leagueid) {
+		if (!league[leagueid]) return false;
+		for (var j in league[leagueid].leaders) {
+			if (toId(league[leagueid].leaders[j].user) === leader) return j;
+		}
+		return false;
+	}
 	for (var i in league) {
 		for (var j in league[i].leaders) {
 			if (toId(league[i].leaders[j].user) === leader) return j;
