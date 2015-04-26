@@ -230,10 +230,7 @@ if (cluster.isMaster) {
 			}
 		}
 	};
-	var interval;
-	if (!Config.herokuhack) {
-		interval = setInterval(sweepClosedSockets, 1000 * 60 * 10);
-	}
+	var interval = setInterval(sweepClosedSockets, 1000 * 60 * 10);
 
 	process.on('message', function (data) {
 		// console.log('worker received: ' + data);
@@ -394,17 +391,6 @@ if (cluster.isMaster) {
 
 		process.send('*' + socketid + '\n' + socket.remoteAddress);
 
-		// console.log('CONNECT: ' + socket.remoteAddress + ' [' + socket.id + ']');
-		var interval;
-		if (Config.herokuhack) {
-			// see https://github.com/sockjs/sockjs-node/issues/57#issuecomment-5242187
-			interval = setInterval(function () {
-				try {
-					socket._session.recv.didClose();
-				} catch (e) {}
-			}, 15000);
-		}
-
 		socket.on('data', function (message) {
 			// drop empty messages (DDoS?)
 			if (!message) return;
@@ -417,11 +403,7 @@ if (cluster.isMaster) {
 		});
 
 		socket.on('close', function () {
-			if (interval) {
-				clearInterval(interval);
-			}
 			process.send('!' + socketid);
-
 			delete sockets[socketid];
 			for (var channelid in channels) {
 				delete channels[channelid][socketid];

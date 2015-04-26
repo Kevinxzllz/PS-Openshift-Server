@@ -26,8 +26,20 @@ exports.Formats = [
 		name: "OU",
 		section: "ORAS Singles",
 
+		searchShow: false,
 		ruleset: ['Pokemon', 'Standard', 'Team Preview', 'Swagger Clause', 'Baton Pass Clause'],
 		banlist: ['Uber', 'Soul Dew', 'Gengarite', 'Kangaskhanite', 'Lucarionite', 'Mawilite', 'Salamencite']
+	},
+	{
+		name: "OU (suspect test)",
+		section: "ORAS Singles",
+
+		ruleset: ['Pokemon', 'Standard', 'Team Preview', 'Swagger Clause', 'Baton Pass Clause'],
+		banlist: ['Soul Dew', 'Gengarite', 'Kangaskhanite', 'Lucarionite', 'Mawilite', 'Salamencite',
+			'Arceus', 'Blaziken', 'Darkrai', 'Deoxys', 'Deoxys-Attack', 'Deoxys-Defense', 'Deoxys-Speed', 'Dialga',
+			'Genesect', 'Giratina', 'Giratina-Origin', 'Greninja', 'Groudon', 'Ho-Oh', 'Kyogre', 'Kyurem-White',
+			'Lugia', 'Mewtwo', 'Palkia', 'Rayquaza', 'Reshiram', 'Shaymin-Sky', 'Xerneas', 'Yveltal', 'Zekrom'
+		]
 	},
 	{
 		name: "OU (no Mega)",
@@ -70,17 +82,8 @@ exports.Formats = [
 		name: "NU",
 		section: "ORAS Singles",
 
-		searchShow: false,
 		ruleset: ['RU'],
-		banlist: ['RU', 'BL3', 'Glalitite', 'Steelixite']
-	},
-	{
-		name: "NU (suspect test)",
-		section: "ORAS Singles",
-
-		challengeShow: false,
-		ruleset: ['RU'],
-		banlist: ['RU', 'BL3', 'Glalitite', 'Steelixite']
+		banlist: ['RU', 'BL3', 'Cameruptite', 'Glalitite', 'Steelixite']
 	},
 	{
 		name: "LC",
@@ -1100,9 +1103,6 @@ exports.Formats = [
 			if (name === 'sweep') {
 				this.add('c|&Sweep|xD');
 			}
-			if (name === 'vacate') {
-				this.add('c|&Vacate|sticky situation');
-			}
 			if (name === 'verbatim') {
 				this.add('c|&verbatim|All in');
 			}
@@ -1456,11 +1456,14 @@ exports.Formats = [
 			if (name === 'galbia') {
 				this.add('c|%galbia|prepare for my beautiful display of pure italian skill');
 			}
+			if (name === 'hugendugen') {
+				this.add('c|%Hugendugen|4-1-0 let\'s go for it');
+			}
 			if (name === 'jellicent') {
 				this.add('c|%Jellicent|~(^.^)~');
 			}
-			if (name === 'hugendugen') {
-				this.add("c|%Hugendugen|4-1-0 let's go for it");
+			if (name === 'kayo') {
+				this.add('c|%Kayo|The One and Only Obese Phantom Enthusiast');
 			}
 			if (name === 'ljdarkrai') {
 				this.add('c|%LJDarkrai|Azideias');
@@ -1478,6 +1481,9 @@ exports.Formats = [
 			if (name === 'uselesstrainer') {
 				sentences = ['huehuehuehue', 'PIZA', 'SPAGUETI', 'RAVIOLI RAVIOLI GIVE ME THE FORMUOLI', 'get ready for PUN-ishment'];
 				this.add('c|%useless trainer|' + sentences[this.random(5)]);
+			}
+			if (name === 'vacate') {
+				this.add('c|%Vacate|sticky situation');
 			}
 
 			// Voices.
@@ -1679,9 +1685,6 @@ exports.Formats = [
 			}
 			if (name === 'sweep') {
 				this.add('c|&Sweep|xD');
-			}
-			if (name === 'vacate') {
-				this.add('c|&Vacate|dam it');
 			}
 			if (name === 'verbatim') {
 				this.add('c|&verbatim|Crash and Burn');
@@ -2018,6 +2021,9 @@ exports.Formats = [
 			if (name === 'jellicent') {
 				this.add('c|%Jellicent|X_X');
 			}
+			if (name === 'kayo') {
+				this.add('c|%Kayo|Fat ShOoOoOoSty!');
+			}
 			if (name === 'ljdarkrai') {
 				this.add('c|%LJDarkrai|:<');
 			}
@@ -2033,6 +2039,9 @@ exports.Formats = [
 			if (name === 'uselesstrainer') {
 				sentences = ['MATTERED', 'CAIO', 'ima repr0t', 'one day i\'ll turn into a beautiful butterfly'];
 				this.add('c|%useless trainer|' + sentences[this.random(4)]);
+			}
+			if (name === 'vacate') {
+				this.add('c|%Vacate|dam it');
 			}
 
 			// Ex-staff or honorary voice.
@@ -3276,8 +3285,6 @@ exports.Formats = [
 				move.multihit = [2, 5];
 				move.onTryHit = function (target, source) {
 					if (!source.isActive) return null;
-				};
-				move.onModifyMove = function (source) {
 					if (this.random(777) !== 42) return;
 					var opponent = pokemon.side.foe.active[0];
 					opponent.setStatus('brn');
@@ -3431,6 +3438,20 @@ exports.Formats = [
 					this.add('-anim', source, "Tail Slap", target);
 				};
 			}
+			if (move.id === 'hypervoice' && name === 'bumbadadabum') {
+				move.name = 'Open Source Software';
+				move.type = 'Electric';
+				move.basePower = 110;
+				move.accuracy = 95;
+				move.secondaries = [{chance:20, self:{boosts:{spa:-1}}, volatileStatus:'disable'}];
+				move.onTryHit = function (target, source) {
+					this.attrLastMove('[still]');
+					this.add('-anim', source, "Dark Void", target);
+				};
+				move.onHit = function () {
+					this.add('c|%Bumbadadabum|I\'d just like to interject for a moment. What you\'re referring to as Linux, is in fact, GNU/Linux, or as I\'ve recently taken to calling it, GNU plus Linux. Linux is not an operating system unto itself, but rather another free component of a fully functioning GNU system made useful by the GNU corelibs, shell utilities and vital system components comprising a full OS as defined by POSIX.');
+				};
+			}
 			if (move.id === 'swagger' && name === 'charlescarmichael') {
 				move.name = 'Bad Pun';
 				move.onHit = function (pokemon) {
@@ -3520,6 +3541,28 @@ exports.Formats = [
 				move.onTryHit = function (target, source) {
 					this.attrLastMove('[still]');
 					this.add('-anim', source, "Teeter Dance", target);
+				};
+			}
+			if (move.id === 'vinewhip' && name === 'kayo') {
+				move.name = 'Beard of Zeus Bomb';
+				move.type = 'Steel';
+				move.basePower = 90;
+				move.secondaries = [{
+					chance:50,
+					self:{boosts:{atk:1, spd:1}},
+					onHit: function (target, source) {
+						if (target.gender === 'F') {
+							target.addVolatile('attract');
+						} else if (target.gender === 'M') {
+							target.addVolatile('confusion');
+						} else {
+							target.trySetStatus('brn');
+						}
+					}
+				}];
+				move.onTryHit = function (target, source, move) {
+					this.attrLastMove('[still]');
+					this.add('-anim', source, "Leaf Storm", target);
 				};
 			}
 			if (move.id === 'blazekick' && name === 'ljdarkrai') {

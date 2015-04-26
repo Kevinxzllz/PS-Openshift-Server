@@ -13445,9 +13445,9 @@ exports.BattleMovedex = {
 					return;
 				}
 				var damage = this.getDamage(source, target, move);
-				if (!damage) {
-					if (damage === 0) return null;
-					return false;
+				if (!damage && damage !== 0) {
+					this.add('-activate', target, 'Substitute', '[block] ' + move.name);
+					return null;
 				}
 				damage = this.runEvent('SubDamage', target, source, move, damage);
 				if (!damage) {

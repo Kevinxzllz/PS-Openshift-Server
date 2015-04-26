@@ -165,8 +165,8 @@ BattlePokemon = (function () {
 		if (typeof set === 'string') set = {name: set};
 
 		// "pre-bound" functions for nicer syntax (avoids repeated use of `bind`)
-		this.getHealth = this.getHealth || BattlePokemon.getHealth.bind(this);
-		this.getDetails = this.getDetails || BattlePokemon.getDetails.bind(this);
+		this.getHealth = (this.getHealth || BattlePokemon.getHealth).bind(this);
+		this.getDetails = (this.getDetails || BattlePokemon.getDetails).bind(this);
 
 		this.set = set;
 
@@ -188,7 +188,7 @@ BattlePokemon = (function () {
 		this.moveset = [];
 		this.baseMoveset = [];
 
-		this.level = this.battle.clampIntRange(set.forcedLevel || set.level || 100, 1, 1000);
+		this.level = this.battle.clampIntRange(set.forcedLevel || set.level || 100, 1, 9999);
 
 		var genders = {M:'M', F:'F'};
 		this.gender = this.template.gender || genders[set.gender] || (Math.random() * 2 < 1 ? 'M' : 'F');
@@ -3187,12 +3187,23 @@ Battle = (function () {
 			}
 		}
 
-		if (basePower && !Math.floor(baseDamage)) {
-			return 1;
+		if (pokemon.status === 'brn' && basePower && move.category === 'Physical' && !pokemon.hasAbility('guts')) {
+			if (this.gen < 6 || move.id !== 'facade') {
+				baseDamage = this.modify(baseDamage, 0.5);
+			}
+		}
+
+		// Generation 5 sets damage to 1 before the final damage modifiers only
+		if (this.gen === 5 && basePower && !Math.floor(baseDamage)) {
+			baseDamage = 1;
 		}
 
 		// Final modifier. Modifiers that modify damage after min damage check, such as Life Orb.
 		baseDamage = this.runEvent('ModifyDamage', pokemon, target, move, baseDamage);
+
+		if (this.gen !== 5 && basePower && !Math.floor(baseDamage)) {
+			return 1;
+		}
 
 		return Math.floor(baseDamage);
 	};
@@ -3893,7 +3904,7 @@ Battle = (function () {
 
 				var dataArr = [0, 1, 2, 3, 4, 5].slice(0, pokemonLength);
 				var slotMap = dataArr.slice(); // Inverse of `dataArr` (slotMap[dataArr[x]] === x)
-				var oldSlot, tempSlot;
+				var tempSlot;
 
 				for (var j = 0; j < data.length; j++) {
 					var slot = parseInt(data.charAt(j), 10) - 1;
@@ -3906,10 +3917,8 @@ Battle = (function () {
 					dataArr[slotMap[slot]] = tempSlot;
 
 					// Update its inverse
-					oldSlot = tempSlot;
-					tempSlot = slotMap[slot];
+					slotMap[tempSlot] = slotMap[slot];
 					slotMap[slot] = j;
-					slotMap[oldSlot] = tempSlot;
 				}
 
 				decisions.push({
@@ -4054,6 +4063,7 @@ Battle = (function () {
 				var moves = pokemon.getMoves();
 				if (!moves.length || moves[0].id === 'struggle') {
 					// override decision and use Struggle if there are no other valid moves
+					if (this.gen <= 4) side.send('-activate', pokemon, 'move: Struggle');
 					moveid = 'struggle';
 				} else {
 					// at least a move is valid (other than Struggle)

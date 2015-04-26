@@ -5,8 +5,10 @@
  * These are system commands - commands required for Pokemon Showdown
  * to run. A lot of these are sent by the client.
  *
- * If you'd like to modify commands, please go to config/commands.js,
- * which also teaches you how to use commands.
+ * System commands should not be modified, added, or removed. If you'd
+ * like to modify or add commands, add or edit files in chat-plugins/
+ *
+ * For the API, see chat-plugins/COMMANDS.md
  *
  * @license MIT license
  */
@@ -23,6 +25,32 @@ var commands = exports.commands = {
 	version: function (target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReplyBox("Server version: <b>" + CommandParser.package.version + "</b>");
+	},
+
+	auth: 'authority',
+	authlist: 'authority',
+	authority: function (target, room, user, connection) {
+		var rankLists = {};
+		var ranks = Object.keys(Config.groups);
+		for (var u in Users.usergroups) {
+			var rank = Users.usergroups[u].charAt(0);
+			// In case the usergroups.csv file is not proper, we check for the server ranks.
+			if (ranks.indexOf(rank) > -1) {
+				var name = Users.usergroups[u].substr(1);
+				if (!rankLists[rank]) rankLists[rank] = [];
+				if (name) rankLists[rank].push(name);
+			}
+		}
+
+		var buffer = [];
+		Object.keys(rankLists).sort(function (a, b) {
+			return (Config.groups[b] || {rank: 0}).rank - (Config.groups[a] || {rank: 0}).rank;
+		}).forEach(function (r) {
+			buffer.push((Config.groups[r] ? Config.groups[r].name + "s (" + r + ")" : r) + ":\n" + rankLists[r].sort().join(", "));
+		});
+
+		if (!buffer.length) buffer = "This server has no auth.";
+		connection.popup(buffer.join("\n\n"));
 	},
 
 	me: function (target, room, user, connection) {
@@ -58,6 +86,7 @@ var commands = exports.commands = {
 				'|raw|<img src="//play.pokemonshowdown.com/sprites/trainers/' + avatar + '.png" alt="" width="80" height="80" />');
 		}
 	},
+	avatarhelp: ["/avatar [new avatar number] - Change your trainer sprite."],
 
 	logout: function (target, room, user) {
 		user.resetName();
@@ -76,6 +105,7 @@ var commands = exports.commands = {
 		}
 		return this.parse('/msg ' + (user.lastPM || '') + ', ' + target);
 	},
+	replyhelp: ["/reply OR /r [message] - Send a private message to the last person you received a message from, or sent a message to."],
 
 	pm: 'msg',
 	whisper: 'msg',
@@ -160,6 +190,7 @@ var commands = exports.commands = {
 		targetUser.lastPM = user.userid;
 		user.lastPM = targetUser.userid;
 	},
+	msghelp: ["/msg OR /whisper OR /w [username], [message] - Send a private message."],
 
 	blockpm: 'ignorepms',
 	blockpms: 'ignorepms',
@@ -174,6 +205,7 @@ var commands = exports.commands = {
 		}
 		return this.sendReply("You are now blocking private messages, except from staff.");
 	},
+	ignorepmshelp: ["/blockpms - Blocks private messages. Unblock them with /unignorepms."],
 
 	unblockpm: 'unignorepms',
 	unblockpms: 'unignorepms',
@@ -183,18 +215,21 @@ var commands = exports.commands = {
 		user.ignorePMs = false;
 		return this.sendReply("You are no longer blocking private messages.");
 	},
+	unignorepmshelp: ["/unblockpms - Unblocks private messages. Block them with /blockpms."],
 
 	idle: 'away',
 	away: function (target, room, user) {
 		this.parse('/blockchallenges');
 		this.parse('/blockpms ' + target);
 	},
+	awayhelp: ["/away - Blocks challenges and private messages. Unblock them with /back."],
 
 	unaway: 'back',
 	back: function () {
 		this.parse('/unblockpms');
 		this.parse('/unblockchallenges');
 	},
+	backhelp: ["/back - Unblocks challenges and/or private messages, if either are blocked."],
 
 	makechatroom: function (target, room, user) {
 		if (!this.can('makeroom')) return;
@@ -214,6 +249,7 @@ var commands = exports.commands = {
 		}
 		return this.sendReply("An error occurred while trying to create the room '" + target + "'.");
 	},
+	makechatroomhelp: ["/makechatroom [roomname] - Creates a new room named [roomname]. Requires: ~"],
 
 	deregisterchatroom: function (target, room, user) {
 		if (!this.can('makeroom')) return;
@@ -229,6 +265,7 @@ var commands = exports.commands = {
 		}
 		return this.sendReply("The room '" + target + "' isn't registered.");
 	},
+	deregisterchatroomhelp: ["/deregisterchatroom [roomname] - Deletes room [roomname] after the next server restart. Requires: ~"],
 
 	hideroom: 'privateroom',
 	hiddenroom: 'privateroom',
@@ -266,6 +303,8 @@ var commands = exports.commands = {
 			}
 		}
 	},
+	privateroomhelp: ["/privateroom [on/off] - Makes or unmakes a room private. Requires: ~",
+		"/hiddenroom [on/off] - Makes or unmakes a room hidden. Hidden rooms will maintain global ranks of users. Requires: \u2605 ~"],
 
 	modjoin: function (target, room, user) {
 		if (!this.can('privateroom', null, room)) return;
@@ -438,6 +477,7 @@ var commands = exports.commands = {
 		room.onUpdateIdentity(targetUser);
 		Rooms.global.writeChatRoomData();
 	},
+	roomownerhelp: ["/roomowner [username] - Appoints [username] as a room owner. Removes official status. Requires: ~"],
 
 	roomdeowner: 'deroomowner',
 	deroomowner: function (target, room, user) {
@@ -460,6 +500,7 @@ var commands = exports.commands = {
 			Rooms.global.writeChatRoomData();
 		}
 	},
+	deroomownerhelp: ["/roomdeowner [username] - Removes [username]'s status as a room owner. Requires: ~"],
 
 	roomdemote: 'roompromote',
 	roompromote: function (target, room, user, connection, cmd) {
@@ -519,6 +560,8 @@ var commands = exports.commands = {
 		if (targetUser) targetUser.updateIdentity(room.id);
 		if (room.chatRoomData) Rooms.global.writeChatRoomData();
 	},
+	roompromotehelp: ["/roompromote [username], [group] - Promotes the user to the specified group or next ranked group. Requires: @ # & ~"],
+	roomdemotehelp: ["/roomdemote [username], [group] - Demotes the user to the specified group or previous ranked group. Requires: @ # & ~"],
 
 	roomauth: function (target, room, user, connection) {
 		var targetRoom = room;
@@ -616,6 +659,7 @@ var commands = exports.commands = {
 		}
 		this.add('|unlink|' + this.getLastIdOf(targetUser));
 	},
+	roombanhelp: ["/roomban [username] - Bans the user from the room you are in. Requires: @ & ~"],
 
 	unroomban: 'roomunban',
 	roomunban: function (target, room, user, connection) {
@@ -637,6 +681,7 @@ var commands = exports.commands = {
 		if (targetUser) targetUser.popup("" + user.name + " has unbanned you from the room " + room.id + ".");
 		this.addModCommand("" + unbannedUserid + " was unbanned from room " + room.id + " by " + user.name + ".");
 	},
+	roomunbanhelp: ["/roomunban [username] - Unbans the user from the room you are in. Requires: @ & ~"],
 
 	autojoin: function (target, room, user, connection) {
 		Rooms.global.autojoinRooms(user, connection);
@@ -666,6 +711,10 @@ var commands = exports.commands = {
 			if (!user.named) {
 				return connection.sendTo(target, "|noinit|namerequired|You must have a name in order to join the room '" + target + "'.");
 			}
+		}
+
+		if (toId(target) in Rooms.aliases) {
+			connection.send(">" + toId(target) + "\n|deinit");
 		}
 
 		var joinResult = user.joinRoom(targetRoom, connection);
@@ -715,6 +764,7 @@ var commands = exports.commands = {
 		targetUser.send('|c|~|/warn ' + target);
 		this.add('|unlink|' + this.getLastIdOf(targetUser));
 	},
+	warnhelp: ["/warn OR /k [username], [reason] - Warns a user showing them the Pokemon Showdown Rules and [reason] in an overlay. Requires: % @ & ~"],
 
 	redirect: 'redir',
 	redir: function (target, room, user, connection) {
@@ -742,9 +792,8 @@ var commands = exports.commands = {
 		this.addModCommand("" + targetUser.name + " was redirected to " + roomName + " by " + user.name + ".");
 		targetUser.leaveRoom(room);
 	},
+	redirhelp: ["/redirect OR /redir [username], [roomname] - Attempts to redirect the user [username] to the room [roomname]. Requires: % @ & ~"],
 
-	hm: 'mute',
-	hourmute: 'mute',
 	m: 'mute',
 	mute: function (target, room, user, connection, cmd) {
 		if (!target) return this.parse('/help mute');
@@ -776,6 +825,13 @@ var commands = exports.commands = {
 
 		targetUser.mute(room.id, muteDuration, true);
 	},
+	mutehelp: ["/mute OR /m [username], [reason] - Mutes a user with reason for 7 minutes. Requires: % @ & ~"],
+
+	hm: 'hourmute',
+	hourmute: function () {
+		CommandParser.commands.mute.apply(this, arguments);
+	},
+	hourmutehelp: ["/hourmute OR /hm [username], [reason] - Mutes a user with reason for an hour. Requires: % @ & ~"],
 
 	um: 'unmute',
 	unmute: function (target, room, user) {
@@ -793,6 +849,7 @@ var commands = exports.commands = {
 
 		targetUser.unmute(room.id);
 	},
+	unmutehelp: ["/unmute [username] - Removes mute from user. Requires: % @ & ~"],
 
 	l: 'lock',
 	ipmute: 'lock',
@@ -832,6 +889,7 @@ var commands = exports.commands = {
 
 		targetUser.lock();
 	},
+	lockhelp: ["/lock OR /l [username], [reason] - Locks the user from talking in all chats. Requires: % @ & ~"],
 
 	unlock: function (target, room, user) {
 		if (!target) return this.parse('/help unlock');
@@ -849,6 +907,7 @@ var commands = exports.commands = {
 			this.sendReply("User '" + target + "' is not locked.");
 		}
 	},
+	unlockhelp: ["/unlock [username] - Unlocks the user. Requires: % @ & ~"],
 
 	b: 'ban',
 	ban: function (target, room, user) {
@@ -890,6 +949,7 @@ var commands = exports.commands = {
 		this.add('|unlink|hide|' + this.getLastIdOf(targetUser));
 		targetUser.ban();
 	},
+	banhelp: ["/ban OR /b [username], [reason] - Kick user from all rooms and ban user's IP address with reason. Requires: @ & ~"],
 
 	unban: function (target, room, user) {
 		if (!target) return this.parse('/help unban');
@@ -904,6 +964,7 @@ var commands = exports.commands = {
 			this.sendReply("User '" + target + "' is not banned.");
 		}
 	},
+	unbanhelp: ["/unban [username] - Unban a user. Requires: @ & ~"],
 
 	unbanall: function (target, room, user) {
 		if (!this.can('rangeban')) return false;
@@ -917,6 +978,7 @@ var commands = exports.commands = {
 		}
 		this.addModCommand("All bans and locks have been lifted by " + user.name + ".");
 	},
+	unbanallhelp: ["/unbanall - Unban all IP addresses. Requires: & ~"],
 
 	banip: function (target, room, user) {
 		if ((user.locked || user.mutedRooms[room.id]) && !user.can('bypassall')) return this.sendReply("You cannot do this while unable to talk.");
@@ -930,6 +992,7 @@ var commands = exports.commands = {
 		Users.bannedIps[target] = '#ipban';
 		this.addModCommand("" + user.name + " temporarily banned the " + (target.charAt(target.length - 1) === '*' ? "IP range" : "IP") + ": " + target);
 	},
+	baniphelp: ["/banip [ip] - Kick users on this IP or IP range from all rooms and bans it. Accepts wildcards to ban ranges. Requires: & ~"],
 
 	unbanip: function (target, room, user) {
 		if ((user.locked || user.mutedRooms[room.id]) && !user.can('bypassall')) return this.sendReply("You cannot do this while unable to talk.");
@@ -944,6 +1007,7 @@ var commands = exports.commands = {
 		delete Users.bannedIps[target];
 		this.addModCommand("" + user.name + " unbanned the " + (target.charAt(target.length - 1) === '*' ? "IP range" : "IP") + ": " + target);
 	},
+	unbaniphelp: ["/unbanip [ip] - Kick users on this IP or IP range from all rooms and bans it. Accepts wildcards to ban ranges. Requires: & ~"],
 
 	rangelock: function (target, room, user) {
 		if ((user.locked || user.mutedRooms[room.id]) && !user.can('bypassall')) return this.sendReply("You cannot do this while unable to talk.");
@@ -986,10 +1050,9 @@ var commands = exports.commands = {
 		if (!this.can('receiveauthmessages', null, room)) return false;
 		return this.privateModCommand("(" + user.name + " notes: " + target + ")");
 	},
+	modnotehelp: ["/modnote [note] - Adds a moderator note that can be read through modlog. Requires: % @ & ~"],
 
-	globaldemote: 'promote',
 	globalpromote: 'promote',
-	demote: 'promote',
 	promote: function (target, room, user, connection, cmd) {
 		if (!target) return this.parse('/help promote');
 
@@ -1030,6 +1093,13 @@ var commands = exports.commands = {
 
 		if (targetUser) targetUser.updateIdentity();
 	},
+	promotehelp: ["/promote [username], [group] - Promotes the user to the specified group or next ranked group. Requires: & ~"],
+
+	globaldemote: 'demote',
+	demote: function () {
+		CommandParser.commands.promote.apply(this, arguments);
+	},
+	demotehelp: ["/demote [username], [group] - Demotes the user to the specified group or previous ranked group. Requires: & ~"],
 
 	forcepromote: function (target, room, user) {
 		// warning: never document this command in /help
@@ -1107,6 +1177,7 @@ var commands = exports.commands = {
 			Rooms.global.writeChatRoomData();
 		}
 	},
+	modchathelp: ["/modchat [off/autoconfirmed/+/%/@/&/~] - Set the level of moderated chat. Requires: @ for off/autoconfirmed/+ options, & ~ for all the options"],
 
 	declare: function (target, room, user) {
 		if (!target) return this.parse('/help declare');
@@ -1117,6 +1188,7 @@ var commands = exports.commands = {
 		this.add('|raw|<div class="broadcast-blue"><b>' + Tools.escapeHTML(target) + '</b></div>');
 		this.logModCommand(user.name + " declared " + target);
 	},
+	declarehelp: ["/declare [message] - Anonymously announces a message. Requires: & ~"],
 
 	htmldeclare: function (target, room, user) {
 		if (!target) return this.parse('/help htmldeclare');
@@ -1138,6 +1210,7 @@ var commands = exports.commands = {
 		}
 		this.logModCommand(user.name + " globally declared " + target);
 	},
+	globaldeclarehelp: ["/globaldeclare [message] - Anonymously announces a message to every room on the server. Requires: ~"],
 
 	cdeclare: 'chatdeclare',
 	chatdeclare: function (target, room, user) {
@@ -1149,6 +1222,7 @@ var commands = exports.commands = {
 		}
 		this.logModCommand(user.name + " globally declared (chat level) " + target);
 	},
+	chatdeclarehelp: ["/cdeclare [message] - Anonymously announces a message to all chatrooms on the server. Requires: ~"],
 
 	wall: 'announce',
 	announce: function (target, room, user) {
@@ -1161,6 +1235,7 @@ var commands = exports.commands = {
 
 		return '/announce ' + target;
 	},
+	announcehelp: ["/announce OR /wall [message] - Makes an announcement. Requires: % @ & ~"],
 
 	fr: 'forcerename',
 	forcerename: function (target, room, user) {
@@ -1186,6 +1261,7 @@ var commands = exports.commands = {
 		targetUser.resetName();
 		targetUser.send("|nametaken||" + user.name + " considers your name inappropriate" + (reason ? ": " + reason : "."));
 	},
+	forcerenamehelp: ["/forcerename OR /fr [username], [reason] - Forcibly change a user's name and shows them the [reason]. Requires: % @ & ~"],
 
 	modlog: function (target, room, user, connection) {
 		var lines = 0;
@@ -1269,6 +1345,9 @@ var commands = exports.commands = {
 			}
 		});
 	},
+	modloghelp: ["/modlog [roomid|all], [n] - Roomid defaults to current room.",
+		"If n is a number or omitted, display the last n lines of the moderator log. Defaults to 15.",
+		"If n is not a number, search the moderator log for 'n' on room's log [roomid]. If you set [all] as [roomid], searches for 'n' on all rooms's logs. Requires: % @ & ~"],
 
 	/*********************************************************
 	 * Server management commands
@@ -1340,6 +1419,11 @@ var commands = exports.commands = {
 		}
 		this.sendReply("Your hot-patch command was unrecognized.");
 	},
+	hotpatchhelp: ["Hot-patching the game engine allows you to update parts of Showdown without interrupting currently-running battles. Requires: ~",
+		"Hot-patching has greater memory requirements than restarting.",
+		"/hotpatch chat - reload chat-commands.js",
+		"/hotpatch battles - spawn new simulator processes",
+		"/hotpatch formats - reload the tools.js tree, rebuild and rebroad the formats list, and also spawn new simulator processes"],
 
 	savelearnsets: function (target, room, user) {
 		if (!this.can('hotpatch')) return false;
@@ -1386,6 +1470,7 @@ var commands = exports.commands = {
 
 		this.logEntry(user.name + " used /lockdown");
 	},
+	lockdownhelp: ["/lockdown - locks down the server, which prevents new battles from starting so that the server can eventually be restarted. Requires: ~"],
 
 	prelockdown: function (target, room, user) {
 		if (!this.can('lockdown')) return false;
@@ -1485,6 +1570,7 @@ var commands = exports.commands = {
 			process.exit();
 		}, 10000);
 	},
+	killhelp: ["/kill - kills the server. Can't be done unless the server is in lockdown state. Requires: ~"],
 
 	loadbanlist: function (target, room, user, connection) {
 		if (!this.can('hotpatch')) return false;
@@ -1507,6 +1593,7 @@ var commands = exports.commands = {
 			connection.sendTo(room, "ipbans.txt has been reloaded.");
 		});
 	},
+	loadbanlisthelp: ["/loadbanlist - Loads the bans located at ipbans.txt. The command is executed automatically at startup. Requires: ~"],
 
 	refreshpage: function (target, room, user) {
 		if (!this.can('hotpatch')) return false;
@@ -1779,6 +1866,7 @@ var commands = exports.commands = {
 		room.auth[targetUser.userid] = '\u2605';
 		this.addModCommand("" + name  + " was promoted to Player by " + user.name + ".");
 	},
+	addplayerhelp: ["/addplayer [username] - Allow the specified user to join the battle as a player."],
 
 	joinbattle: function (target, room, user) {
 		if (!room.joinBattle) return this.sendReply("You can only do this in battle rooms.");
@@ -1810,6 +1898,7 @@ var commands = exports.commands = {
 			this.sendReply("/kickbattle - User isn't in battle.");
 		}
 	},
+	kickbattlehelp: ["/kickbattle [username], [reason] - Kicks a user from a battle with reason. Requires: % @ & ~"],
 
 	kickinactive: function (target, room, user) {
 		if (room.requestKickInactive) {
@@ -1872,6 +1961,7 @@ var commands = exports.commands = {
 			this.logModCommand(user.name + " forced a win for " + target + ".");
 		}
 	},
+	forcewinhelp: ["/forcetie - Forces the current match to tie. Requires: & ~"],
 
 	/*********************************************************
 	 * Challenging and searching commands
@@ -1925,6 +2015,7 @@ var commands = exports.commands = {
 		user.blockChallenges = true;
 		this.sendReply("You are now blocking all incoming challenge requests.");
 	},
+	blockchallengeshelp: ["/blockchallenges - Blocks challenges so no one can challenge you. Unblock them with /unblockchallenges."],
 
 	unbch: 'allowchallenges',
 	unblockchall: 'allowchallenges',
@@ -1935,6 +2026,7 @@ var commands = exports.commands = {
 		user.blockChallenges = false;
 		this.sendReply("You are available for challenges from now on.");
 	},
+	allowchallengeshelp: ["/unblockchallenges - Unblocks challenges so you can be challenged again. Block them with /blockchallenges."],
 
 	cchall: 'cancelChallenge',
 	cancelchallenge: function (target, room, user) {
@@ -2039,6 +2131,78 @@ var commands = exports.commands = {
 			}
 		}
 		user.rename(targetName, targetToken, targetAuth, connection);
+	},
+
+	a: function (target, room, user) {
+		if (!this.can('rawpacket')) return false;
+		// secret sysop command
+		room.add(target);
+	},
+
+	/*********************************************************
+	 * Help commands
+	 *********************************************************/
+
+	commands: 'help',
+	h: 'help',
+	'?': 'help',
+	help: function (target, room, user) {
+		target = target.toLowerCase();
+
+		// overall
+		if (target === 'help' || target === 'h' || target === '?' || target === 'commands') {
+			this.sendReply("/help OR /h OR /? - Gives you help.");
+		} else if (!target) {
+			this.sendReply("COMMANDS: /nick, /avatar, /rating, /whois, /msg, /reply, /ignore, /away, /back, /timestamps, /highlight");
+			this.sendReply("INFORMATIONAL COMMANDS: /data, /dexsearch, /movesearch, /groups, /faq, /rules, /intro, /tiers, /othermetas, /learn, /analysis, /calc (replace / with ! to broadcast. Broadcasting requires: + % @ & ~)");
+			if (user.group !== Config.groupsranking[0]) {
+				this.sendReply("DRIVER COMMANDS: /warn, /mute, /unmute, /alts, /forcerename, /modlog, /lock, /unlock, /announce, /redirect");
+				this.sendReply("MODERATOR COMMANDS: /ban, /unban, /ip");
+				this.sendReply("LEADER COMMANDS: /declare, /forcetie, /forcewin, /promote, /demote, /banip, /unbanall");
+			}
+			this.sendReply("For an overview of room commands, use /roomhelp");
+			this.sendReply("For details of a specific command, use something like: /help data");
+		} else {
+			var altCommandHelp;
+			var helpCmd;
+			var targets = target.split(' ');
+			if (typeof commands[target] === 'string') {
+				// If a function changes with command name, help for that command name will be searched first.
+				altCommandHelp = target + 'help';
+				if (altCommandHelp in commands) {
+					helpCmd = altCommandHelp;
+				} else {
+					helpCmd = commands[target] + 'help';
+				}
+			} else if (targets.length > 1 && typeof commands[targets[0]] === 'object') {
+				// Handle internal namespace commands
+				var helpCmd = targets[targets.length - 1] + 'help';
+				var namespace = commands[targets[0]];
+				for (var i = 1; i < targets.length - 1; i++) {
+					if (!namespace[targets[i]]) return this.sendReply("Help for the command '" + target + "' was not found. Try /help for general help");
+					namespace = namespace[targets[i]];
+				}
+				if (typeof namespace[helpCmd] === 'object') {
+					return this.sendReply(namespace[helpCmd].join('\n'));
+				} else if (typeof namespace[helpCmd] === 'function') {
+					return this.parse('/' + targets.slice(0, targets.length - 1).concat(helpCmd).join(' '));
+				} else {
+					return this.sendReply("Help for the command '" + target + "' was not found. Try /help for general help");
+				}
+			} else {
+				helpCmd = target + 'help';
+			}
+			if (helpCmd in commands) {
+				if (typeof commands[helpCmd] === 'function') {
+					// If the help command is a function, parse it instead
+					this.parse('/' + helpCmd);
+				} else if (Array.isArray(commands[helpCmd])) {
+					this.sendReply(commands[helpCmd].join('\n'));
+				}
+			} else {
+				this.sendReply("Help for the command '" + target + "' was not found. Try /help for general help");
+			}
+		}
 	}
 
 };
