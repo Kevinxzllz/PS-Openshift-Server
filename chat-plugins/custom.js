@@ -73,7 +73,7 @@ exports.commands = {
 		}, {})).join(", ")));
 	},
 
-	clearall: function (target, room, user) {
+	clearall: function (target, room, user, connection) {
 		if (!user.hasConsoleAccess(connection)) {return this.sendReply("/clearall - Access denied.");}
 		var len = room.log.length,
 			users = [];
