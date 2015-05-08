@@ -34,6 +34,7 @@ var commands = exports.commands = {
 		var ranks = Object.keys(Config.groups);
 		for (var u in Users.usergroups) {
 			var rank = Users.usergroups[u].charAt(0);
+			if (rank === ' ' || rank === '+') continue;
 			// In case the usergroups.csv file is not proper, we check for the server ranks.
 			if (ranks.indexOf(rank) > -1) {
 				var name = Users.usergroups[u].substr(1);
@@ -94,7 +95,12 @@ var commands = exports.commands = {
 
 	requesthelp: 'report',
 	report: function (target, room, user) {
-		this.sendReply("Use the Help room.");
+		if (room.id === 'help') {
+			this.sendReply("Ask one of the Mods in the Help room.");
+		} else {
+			this.sendReply("Ask a Mod in the Help room.");
+			this.parse('/join help');
+		}
 	},
 
 	r: 'reply',
@@ -713,7 +719,7 @@ var commands = exports.commands = {
 			}
 		}
 
-		if (toId(target) in Rooms.aliases) {
+		if (toId(target) !== targetRoom.id) {
 			connection.send(">" + toId(target) + "\n|deinit");
 		}
 

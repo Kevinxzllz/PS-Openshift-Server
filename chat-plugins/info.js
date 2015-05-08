@@ -160,6 +160,7 @@ var commands = exports.commands = {
 
 		var buffer = '';
 		var targetId = toId(target);
+		if (!targetId) return this.parse('/help data');
 		if (targetId === '' + parseInt(targetId)) {
 			for (var p in Tools.data.Pokedex) {
 				var pokemon = Tools.getTemplate(p);
@@ -196,6 +197,8 @@ var commands = exports.commands = {
 
 		if (showDetails) {
 			var details;
+			var isSnatch = false;
+			var isMirrorMove = false;
 			if (newTargets[0].searchType === 'pokemon') {
 				var pokemon = Tools.getTemplate(newTargets[0].name);
 				var weighthit = 20;
@@ -243,6 +246,10 @@ var commands = exports.commands = {
 				if (move.flags['punch']) details["<font color=black>&#10003; Punch</font>"] = "";
 				if (move.flags['powder']) details["<font color=black>&#10003; Powder</font>"] = "";
 				if (move.flags['reflectable']) details["<font color=black>&#10003; Bounceable</font>"] = "";
+				if (move.flags['gravity']) details["<font color=black>&#10007; Suppressed by Gravity</font>"] = "";
+
+				if (move.id === 'snatch') isSnatch = true;
+				if (move.id === 'mirrormove') isMirrorMove = true;
 
 				details["Target"] = {
 					'normal': "One Adjacent Pokemon",
@@ -282,6 +289,9 @@ var commands = exports.commands = {
 			buffer += '|raw|<font size="1">' + Object.keys(details).map(function (detail) {
 				return '<font color=#585858>' + detail + (details[detail] !== '' ? ':</font> ' + details[detail] : '</font>');
 			}).join("&nbsp;|&ThickSpace;") + '</font>';
+
+			if (isSnatch) buffer += '&nbsp;|&ThickSpace;<a href="http://pokemonshowdown.com/dex/moves/snatch"><font size="1">Snatchable Moves</font></a>';
+			if (isMirrorMove) buffer += '&nbsp;|&ThickSpace;<a href="http://pokemonshowdown.com/dex/moves/mirrormove"><font size="1">Mirrorable Moves</font></a>';
 		}
 		this.sendReply(buffer);
 	},
@@ -303,7 +313,7 @@ var commands = exports.commands = {
 		if (!target) return this.parse('/help dexsearch');
 		var targets = target.split(',');
 		var searches = {};
-		var allTiers = {'uber':1, 'ou':1, 'bl':1, 'uu':1, 'bl2':1, 'ru':1, 'bl3':1, 'nu':1, 'bl4':1, 'pu':1, 'nfe':1, 'lc':1, 'cap':1};
+		var allTiers = {'uber':1, 'ou':1, 'bl':1, 'uu':1, 'bl2':1, 'ru':1, 'bl3':1, 'nu':1, 'bl4':1, 'pu':1, 'nfe':1, 'lc uber':1, 'lc':1, 'cap':1};
 		var allColours = {'green':1, 'red':1, 'blue':1, 'white':1, 'brown':1, 'yellow':1, 'purple':1, 'pink':1, 'gray':1, 'black':1};
 		var allStats = {'hp':1, 'atk':1, 'def':1, 'spa':1, 'spd':1, 'spe':1};
 		var showAll = false;
@@ -481,7 +491,7 @@ var commands = exports.commands = {
 						if ('lc' in searches[search]) {
 							// some LC legal Pokemon are stored in other tiers (Ferroseed/Murkrow etc)
 							// this checks for LC legality using the going criteria, instead of dex[mon].tier
-							var isLC = (dex[mon].evos && dex[mon].evos.length > 0) && !dex[mon].prevo && Tools.data.Formats['lc'].banlist.indexOf(dex[mon].species) === -1;
+							var isLC = (dex[mon].evos && dex[mon].evos.length > 0) && !dex[mon].prevo && dex[mon].tier !== "LC Uber" && Tools.data.Formats['lc'].banlist.indexOf(dex[mon].species) === -1;
 							if ((searches[search]['lc'] && !isLC) || (!searches[search]['lc'] && isLC)) {
 								delete dex[mon];
 								continue;
@@ -619,10 +629,11 @@ var commands = exports.commands = {
 		return this.sendReplyBox(resultsStr);
 	},
 	dexsearchhelp: ["/dexsearch [type], [move], [move], ... - Searches for Pokemon that fulfill the selected criteria",
-		"Search categories are: type, tier, color, moves, ability, gen.",
+		"Search categories are: type, tier, color, moves, ability, gen, recovery, priority, stat.",
 		"Valid colors are: green, red, blue, white, brown, yellow, purple, pink, gray and black.",
 		"Valid tiers are: Uber/OU/BL/UU/BL2/RU/BL3/NU/PU/NFE/LC/CAP.",
 		"Types must be followed by ' type', e.g., 'dragon type'.",
+		"Inequality ranges use the characters '>' and '<' though they behave as '≥' and '≤', e.g., 'speed > 100' searches for all Pokemon equal to and greater than 100 speed.",
 		"Parameters can be excluded through the use of '!', e.g., '!water type' excludes all water types.",
 		"The parameter 'mega' can be added to search for Mega Evolutions only, and the parameters 'FE' or 'NFE' can be added to search fully or not-fully evolved Pokemon only.",
 		"The order of the parameters does not matter."],
@@ -973,6 +984,7 @@ var commands = exports.commands = {
 		"Stat boosts must be preceded with 'boosts ', e.g., 'boosts attack' searches for moves that boost the attack stat.",
 		"Inequality ranges use the characters '>' and '<' though they behave as '≥' and '≤', e.g., 'bp > 100' searches for all moves equal to and greater than 100 base power.",
 		"Parameters can be excluded through the use of '!', e.g., !water type' excludes all water type moves.",
+		"If a Pokemon is included as a parameter, moves will be searched from it's movepool.",
 		"The order of the parameters does not matter."],
 
 	learnset: 'learn',
@@ -1065,7 +1077,8 @@ var commands = exports.commands = {
 	weakness: function (target, room, user) {
 		if (!target) return this.parse('/help weakness');
 		if (!this.canBroadcast()) return;
-		var targets = target.split(/[ ,\/]/);
+		target = target.trim();
+		var targets = target.split(/ ?[,\/ ] ?/);
 
 		var pokemon = Tools.getTemplate(target);
 		var type1 = Tools.getType(targets[0]);
@@ -1073,7 +1086,7 @@ var commands = exports.commands = {
 
 		if (pokemon.exists) {
 			target = pokemon.species;
-		} else if (type1.exists && type2.exists) {
+		} else if (type1.exists && type2.exists && type1 !== type2) {
 			pokemon = {types: [type1.id, type2.id]};
 			target = type1.id + "/" + type2.id;
 		} else if (type1.exists) {
@@ -1111,9 +1124,9 @@ var commands = exports.commands = {
 
 		var buffer = [];
 		buffer.push(pokemon.exists ? "" + target + ' (ignoring abilities):' : '' + target + ':');
-		buffer.push('<span class=\"message-effect-weak\">Weaknesses</span>: ' + (weaknesses.join(', ') || 'None'));
-		buffer.push('<span class=\"message-effect-resist\">Resistances</span>: ' + (resistances.join(', ') || 'None'));
-		buffer.push('<span class=\"message-effect-immune\">Immunities</span>: ' + (immunities.join(', ') || 'None'));
+		buffer.push('<span class="message-effect-weak">Weaknesses</span>: ' + (weaknesses.join(', ') || '<font color=#999999>None</font>'));
+		buffer.push('<span class="message-effect-resist">Resistances</span>: ' + (resistances.join(', ') || '<font color=#999999>None</font>'));
+		buffer.push('<span class="message-effect-immune">Immunities</span>: ' + (immunities.join(', ') || '<font color=#999999>None</font>'));
 		this.sendReplyBox(buffer.join('<br>'));
 	},
 	weaknesshelp: ["/weakness [pokemon] - Provides a Pokemon's resistances, weaknesses, and immunities, ignoring abilities.",
@@ -1180,6 +1193,173 @@ var commands = exports.commands = {
 	},
 	effectivenesshelp: ["/effectiveness [attack], [defender] - Provides the effectiveness of a move or type on another type or a Pokémon.",
 		"!effectiveness [attack], [defender] - Shows everyone the effectiveness of a move or type on another type or a Pokémon."],
+
+	cover: 'coverage',
+	coverage: function (target, room, user) {
+		if (!this.canBroadcast()) return;
+		if (!target) return this.parse("/help coverage");
+
+		var targets = target.split(/[,+]/);
+		var sources = [];
+
+		var dispTable = false;
+		var bestCoverage = {};
+		for (var type in Tools.data.TypeChart) {
+			// This command uses -5 to designate immunity
+			bestCoverage[type] = -5;
+		}
+
+		for (var i = 0; i < targets.length; i++) {
+			var move = targets[i].trim().capitalize();
+			if (move === 'Table' || move === 'All') {
+				if (this.broadcasting) return this.sendReplyBox("The full table cannot be broadcast.");
+				dispTable = true;
+				continue;
+			}
+
+			var eff;
+			if (move in Tools.data.TypeChart) {
+				sources.push(move);
+				for (var type in bestCoverage) {
+					if (!Tools.getImmunity(move, type) && !move.ignoreImmunity) continue;
+					eff = Tools.getEffectiveness(move, type);
+					if (eff > bestCoverage[type]) bestCoverage[type] = eff;
+				}
+				continue;
+			}
+			move = Tools.getMove(move);
+			if (move.exists) {
+				if (!move.basePower && !move.basePowerCallback) continue;
+				sources.push(move);
+				for (var type in bestCoverage) {
+					if (!Tools.getImmunity(move.type, type) && !move.ignoreImmunity) continue;
+					var baseMod = Tools.getEffectiveness(move, type);
+					var moveMod = move.onEffectiveness && move.onEffectiveness.call(Tools, baseMod, type, move);
+					eff = typeof moveMod === 'number' ? moveMod : baseMod;
+					if (eff > bestCoverage[type]) bestCoverage[type] = eff;
+				}
+				continue;
+			}
+
+			return this.sendReply("No type or move '" + targets[i] + "' found.");
+		}
+		if (sources.length === 0) return this.sendReply("No moves using a type table for determining damage were specified.");
+		if (sources.length > 4) return this.sendReply("Specify a maximum of 4 moves or types.");
+
+		// converts to fractional effectiveness, 0 for immune
+		for (var type in bestCoverage) {
+			if (bestCoverage[type] === -5) {
+				bestCoverage[type] = 0;
+				continue;
+			}
+			bestCoverage[type] = Math.pow(2, bestCoverage[type]);
+		}
+
+		if (!dispTable) {
+			var buffer = [];
+			var superEff = [];
+			var neutral = [];
+			var resists = [];
+			var immune = [];
+
+			for (var type in bestCoverage) {
+				switch (bestCoverage[type]) {
+					case 0:
+						immune.push(type);
+						break;
+					case 0.25:
+					case 0.5:
+						resists.push(type);
+						break;
+					case 1:
+						neutral.push(type);
+						break;
+					case 2:
+					case 4:
+						superEff.push(type);
+						break;
+					default:
+						throw new Error("/coverage effectiveness of " + bestCoverage[type] + " from parameters: " + target);
+				}
+			}
+			buffer.push('Coverage for ' + sources.join(' + ') + ':');
+			buffer.push('<b><font color=#559955>Super Effective</font></b>: ' + (superEff.join(', ') || '<font color=#999999>None</font>'));
+			buffer.push('<span class="message-effect-resist">Neutral</span>: ' + (neutral.join(', ') || '<font color=#999999>None</font>'));
+			buffer.push('<span class="message-effect-weak">Resists</span>: ' + (resists.join(', ') || '<font color=#999999>None</font>'));
+			buffer.push('<span class="message-effect-immune">Immunities</span>: ' + (immune.join(', ') || '<font color=#999999>None</font>'));
+			return this.sendReplyBox(buffer.join('<br>'));
+		} else {
+			var buffer = '<div class="scrollable"><table cellpadding="1" width="100%"><tr><th></th>';
+			var icon = {};
+			for (var type in Tools.data.TypeChart) {
+				icon[type] = '<img src="http://play.pokemonshowdown.com/sprites/types/' + type + '.png" width="32" height="14">';
+				// row of icons at top
+				buffer += '<th>' + icon[type] + '</th>';
+			}
+			buffer += '</tr>';
+			for (var type1 in Tools.data.TypeChart) {
+				// assembles the rest of the rows
+				buffer += '<tr><th>' + icon[type1] + '</th>';
+				for (var type2 in Tools.data.TypeChart) {
+					var typing;
+					var cell = '<th ';
+					var bestEff = -5;
+					if (type1 === type2) {
+						// when types are the same it's considered pure type
+						typing = type1;
+						bestEff = bestCoverage[type1];
+					} else {
+						typing = type1 + "/" + type2;
+						for (var i = 0; i < sources.length; i++) {
+							var move = sources[i];
+
+							var curEff = 0;
+							if ((!Tools.getImmunity((move.type || move), type1) || !Tools.getImmunity((move.type || move), type2)) && !move.ignoreImmunity) continue;
+							var baseMod = Tools.getEffectiveness(move, type1);
+							var moveMod = move.onEffectiveness && move.onEffectiveness.call(Tools, baseMod, type1, move);
+							curEff += typeof moveMod === 'number' ? moveMod : baseMod;
+							baseMod = Tools.getEffectiveness(move, type2);
+							moveMod = move.onEffectiveness && move.onEffectiveness.call(Tools, baseMod, type2, move);
+							curEff += typeof moveMod === 'number' ? moveMod : baseMod;
+
+							if (curEff > bestEff) bestEff = curEff;
+						}
+						if (bestEff === -5) {
+							bestEff = 0;
+						} else {
+							bestEff = Math.pow(2, bestEff);
+						}
+					}
+					switch (bestEff) {
+						case 0:
+							cell += 'bgcolor=#666666 title="' + typing + '"><font color=#000000>' + bestEff + '</font>';
+							break;
+						case 0.25:
+						case 0.5:
+							cell += 'bgcolor=#AA5544 title="' + typing + '"><font color=#660000>' + bestEff + '</font>';
+							break;
+						case 1:
+							cell += 'bgcolor=#6688AA title="' + typing + '"><font color=#000066>' + bestEff + '</font>';
+							break;
+						case 2:
+						case 4:
+							cell += 'bgcolor=#559955 title="' + typing + '"><font color=#003300>' + bestEff + '</font>';
+							break;
+						default:
+							throw new Error("/coverage effectiveness of " + bestEff + " from parameters: " + target);
+					}
+					cell += '</th>';
+					buffer += cell;
+				}
+			}
+			buffer += '</table></div>';
+
+			this.sendReplyBox('Coverage for ' + sources.join(' + ') + ':<br>' + buffer);
+		}
+	},
+	coveragehelp: ["/coverage [move 1], [move 2] ... - Provides the best effectiveness match-up against all defending types for given moves or attacking types",
+		"!coverage [move 1], [move 2] ... - Shows this information to everyone.",
+		"Adding the parameter 'all' or 'table' will display the information with a table of all type combinations."],
 
 	/*********************************************************
 	 * Informational commands
@@ -1337,7 +1517,7 @@ var commands = exports.commands = {
 		if (target === 'all' || target === 'omofthemonth' || target === 'omotm' || target === 'month') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3481155/\">Other Metagame of the Month</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3529252/\">Current OMotM: Inheritance</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3505227/\">Current OMotM: 2v2 Doubles</a><br />";
 		}
 		if (target === 'all' || target === 'seasonal') {
 			matched = true;
@@ -1867,6 +2047,147 @@ var commands = exports.commands = {
 
 		this.sendReplyBox(target);
 	},
-	htmlboxhelp: ["/htmlbox [message] - Displays a message, parsing HTML code contained. Requires: ~ # with global authority"]
+	htmlboxhelp: ["/htmlbox [message] - Displays a message, parsing HTML code contained. Requires: ~ # with global authority"],
 
+	sdt: 'seasonaldata',
+	sdata: 'seasonaldata',
+	seasonaldata: function (target, room, user) {
+		if (!this.canBroadcast()) return;
+
+		var buffer = '|raw|';
+		var targetId = toId(target);
+		switch (targetId) {
+		case 'cura':
+		case 'recover':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Cura"><span class="col movenamecol">Cura</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Heals the active team by 20%.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'curaga':
+		case 'softboiled':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Curaga"><span class="col movenamecol">Curaga</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Heals the active team by 33%.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'wildgrowth':
+		case 'reflect':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Wild Growth"><span class="col movenamecol">Wild Growth</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Heals the team by 12.5% each turn for 5 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'powershield':
+		case 'acupressure':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Power Shield"><span class="col movenamecol">Power Shield</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">The target will be healed by 25% of the next damage received.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'rejuvenation':
+		case 'holdhands':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Rejuvenation"><span class="col movenamecol">Rejuvenation</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">The target will be healed by 18% each turn for 3 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'fairyward':
+		case 'luckychant':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Fairy Ward"><span class="col movenamecol">Fairy Ward</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Prevents status and reduce damage by 5% for all the team for 3 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'taunt':
+		case 'followme':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Taunt"><span class="col movenamecol">Taunt</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Will redirect all attacks to user for three turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'sacrifice':
+		case 'meditate':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Sacrifice"><span class="col movenamecol">Sacrifice</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Will redirect all team damage to user for 4 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'cooperation':
+		case 'helpinghand':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Cooperation"><span class="col movenamecol">Cooperation</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Switches positions with target.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'slowdown':
+		case 'spite':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Slow Down"><span class="col movenamecol">Slow Down</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Removes 8 PP for target\'s last used move. Gets disabled after use.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'healingtouch':
+		case 'aromaticmist':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Healing Touch"><span class="col movenamecol">Healing Touch</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Heals target by 60% of its max HP.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'penance':
+		case 'healbell':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Penance"><span class="col movenamecol">Penance</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Heals all team by 12.5% and places a shield that will heal them for 6.15% upon being hit.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'stop':
+		case 'fakeout':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Stop"><span class="col movenamecol">Stop</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Target won\'t move. Has priority. User is disabled after use.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'laststand':
+		case 'endure':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Last Stand"><span class="col movenamecol">Last Stand</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">User will survive the next hit. Damage taken is halved for the turn. User is disabled after use.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'barkskin':
+		case 'withdraw':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Barkskin"><span class="col movenamecol">Barkskin</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Reduces damage taken by 25% by 2 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'punishment':
+		case 'seismictoss':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Punishment"><span class="col movenamecol">Punishment</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Base damage is 33% of user\'s current HP.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'flamestrike':
+		case 'flamethrower':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Flamestrike"><span class="col movenamecol">Flamestrike</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />30%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Base damage is 40% if the target is burned.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'conflagration':
+		case 'fireblast':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Conflagration"><span class="col movenamecol">Conflagration</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Burns target.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'moonfire':
+		case 'thunderbolt':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Moonfire"><span class="col movenamecol">Moonfire</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Applies Moonfire for 4 turns, it deals 6% damage.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'starfire':
+		case 'thunder':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Starfire"><span class="col movenamecol">Starfire</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />30%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Base damage is 40% if the target is moonfired.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'corruption':
+		case 'toxic':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Corruption"><span class="col movenamecol">Corruption</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Deals 10% damage every turn for 4 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'soulleech':
+		case 'leechseed':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Soul Leech"><span class="col movenamecol">Soul Leech</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Drains 8% HP every turn for 4 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'icelance':
+		case 'icebeam':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Ice Lance"><span class="col movenamecol">Ice Lance</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />30%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Base damage is 40% if the target is chilled.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'frostbite':
+		case 'freezeshock':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Frostbite"><span class="col movenamecol">Frostbite</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Chills target. It will be slower.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'hurricane':
+		case 'aircutter':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Hurricane"><span class="col movenamecol">Hurricane</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Damage all adjacent foes.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'storm':
+		case 'muddywater':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Storm"><span class="col movenamecol">Storm</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Damage all adjacent foes.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'fury':
+		case 'furyswipes':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Fury"><span class="col movenamecol">Fury</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />15%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Disables user. Next use will have 100% base power.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'garrote':
+		case 'scratch':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Garrote"><span class="col movenamecol">Garrote</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />20%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Causes bleeding. It deals 6.15% damage for 5 turns.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'poisongas':
+		case 'smog':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Poison Gas"><span class="col movenamecol">Poison Gas</span> <span class="col typecol"></span> <span class="col labelcol"></span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Poisons the target.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		case 'mutilate':
+		case 'slash':
+			buffer += '<ul class="utilichart"><li class="result"><a data-name="Mutilate"><span class="col movenamecol">Mutilate</span> <span class="col typecol"></span> <span class="col labelcol"><em>Power</em><br />27%</span> <span class="col widelabelcol"></span> <span class="col pplabelcol"></span> <span class="col movedesccol">Increases power by 10% or 20% if target is psn or/and bld.</span> </a></li><li style="clear:both"></li></ul>';
+			break;
+		default:
+			buffer = "No Pokemon, item, move, ability or nature named '" + target + "' was found on this seasonal.";
+		}
+		if (targetId === 'evasion' || targetId === 'protect') {
+			return this.parse('/data protect');
+		} else if (!targetId) {
+			return this.sendReply("Please specify a valid Pokemon, item, move, ability or nature in this seasonal.");
+		} else {
+			this.sendReply(buffer);
+		}
+	},
+	seasonaldatahelp: ["/seasonaldata [pokemon/item/move/ability] - Get details on this pokemon/item/move/ability/nature for the current seasonal.",
+		"!seasonaldata [pokemon/item/move/ability] - Show everyone these details. Requires: + % @ & ~"]
 };
