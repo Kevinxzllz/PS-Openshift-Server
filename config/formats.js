@@ -743,23 +743,6 @@ exports.Formats = [
 		}
 	},
 	{
-		name: "2v2 Doubles",
-		section: 'Local Metagames',
-		mod: 'randoms',
-		gameType: 'doubles',
-		searchShow: true,
-		onBegin: function () {
-			this.p1.pokemon = this.p1.pokemon.slice(0, 2);
-			this.p1.pokemonLeft = this.p1.pokemon.length;
-			this.p2.pokemon = this.p2.pokemon.slice(0, 2);
-			this.p2.pokemonLeft = this.p2.pokemon.length;
-		},
-		ruleset: ['Pokemon', 'Standard', 'Team Preview 2v2'],
-		banlist: ['Dark Void', 'Perish song', 'Explosion', 'Self Destruct', 'Mewtwo', 'Lugia', 'Ho-Oh', 'Kyogre', 'Groudon', 'Rayquaza', 'Dialga',
-			'Palkia', 'Giratina', 'Giratina-Origin', 'Arceus', 'Reshiram', 'Zekrom', 'Kyurem-White', 'Xerneas', 'Yveltal', 'Deoxys-a'
-		],
-	},
-	{
 		name: "Mega Tier",
 		section: "Local Metagames",
 		mod: 'megatier',
