@@ -696,6 +696,15 @@ exports.Formats = [
 		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
 	},
 	{
+		name: "Random MonoGen",
+		section: "Random Metagames",
+		mod: 'randoms',
+
+		searchShow: true,
+		team: 'randomMonoGen',
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+	},
+	{
 		name: "Challenge Cup 2-vs-2",
 		section: "Random Metagames",
 		mod: 'randoms',
@@ -857,6 +866,15 @@ exports.Formats = [
 			}
 			if (legendCount > 2) return ['You can\'t use more than two of these pokemon: Mewtwo, Lugia, Ho-Oh, Rayquaza, Kyogre, Groudon, Dialga, Palkia, Giratina.'];
 		}
+	},
+	
+	{
+		name: "Balanced Hackmons (Doubles)",
+		section: "Local Metagames",
+		gameType: 'doubles',
+
+		ruleset: ['Pokemon', 'Ability Clause', '-ate Clause', 'OHKO Clause', 'Evasion Moves Clause', 'Team Preview', 'HP Percentage Mod', 'Cancel Mod'],
+		banlist: ['Arena Trap', 'Huge Power', 'Parental Bond', 'Pure Power', 'Shadow Tag', 'Wonder Guard', 'Assist', 'Chatter']
 	},
 
 	// BW2 Singles
