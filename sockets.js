@@ -17,7 +17,7 @@ global.DATA_DIR = (process.env.OPENSHIFT_DATA_DIR) ? process.env.OPENSHIFT_DATA_
 
 if (cluster.isMaster) {
 	cluster.setupMaster({
-		exec: 'sockets.js'
+		exec: require('path').resolve(__dirname, 'sockets.js')
 	});
 
 	var workers = exports.workers = {};

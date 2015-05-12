@@ -64,6 +64,7 @@ function runNpm(command) {
 var isLegacyEngine = !global.Map;
 
 var fs = require('fs');
+var path = require('path');
 try {
 	require('sugar');
 	if (isLegacyEngine) require('es6-shim');
@@ -82,8 +83,8 @@ if (isLegacyEngine && !new Map().set()) {
 // Synchronously, since it's needed before we can start the server
 //if (!fs.existsSync('./config/config.js')) {
 	console.log("config.js doesn't exist - creating one with default settings...");
-	fs.writeFileSync('./config/config.js',
-		fs.readFileSync('./config/config-example.js')
+	fs.writeFileSync(path.resolve(__dirname, 'config/config.js'),
+		fs.readFileSync(path.resolve(__dirname, 'config/config-example.js'))
 	);
 //}
 
@@ -101,7 +102,7 @@ if (!fs.existsSync(LOGS_DIR)) {
 global.Config = require('./config/config.js');
 
 if (Config.watchconfig) {
-	fs.watchFile('./config/config.js', function (curr, prev) {
+	fs.watchFile(path.resolve(__dirname, 'config/config.js'), function (curr, prev) {
 		if (curr.mtime <= prev.mtime) return;
 		try {
 			delete require.cache[require.resolve('./config/config.js')];
@@ -229,7 +230,7 @@ global.ResourceMonitor = {
 		for (var i in this.networkUse) {
 			buf += '' + this.networkUse[i] + '\t' + this.networkCount[i] + '\t' + i + '\n';
 		}
-		fs.writeFile('logs/networkuse.tsv', buf);
+		fs.writeFile(path.resolve(__dirname, 'logs/networkuse.tsv'), buf);
 	},
 	clearNetworkUse: function () {
 		this.networkUse = {};
@@ -412,7 +413,7 @@ Rooms.global.formatListText = Rooms.global.getFormatListText();
 global.TeamValidator = require('./team-validator.js');
 
 // load ipbans at our leisure
-fs.readFile('./config/ipbans.txt', function (err, data) {
+fs.readFile(path.resolve(__dirname, 'config/ipbans.txt'), function (err, data) {
 	if (err) return;
 	data = ('' + data).split("\n");
 	var rangebans = [];

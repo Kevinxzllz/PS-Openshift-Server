@@ -669,7 +669,34 @@ exports.BattleMovedex = {
 	},
 	lunardance: {
 		inherit: true,
-		flags: {heal: 1}
+		flags: {heal: 1},
+		onAfterMove: function (pokemon) {
+			pokemon.switchFlag = true;
+		},
+		effect: {
+			duration: 1,
+			onStart: function (side) {
+				this.debug('Lunar Dance started on ' + side.name);
+			},
+			onSwitchInPriority: -1,
+			onSwitchIn: function (target) {
+				if (target.position !== this.effectData.sourcePosition) {
+					return;
+				}
+				if (target.hp > 0) {
+					var source = this.effectData.source;
+					var damage = target.heal(target.maxhp);
+					target.setStatus('');
+					for (var m in target.moveset) {
+						target.moveset[m].pp = target.moveset[m].maxpp;
+					}
+					this.add('-heal', target, target.getHealth, '[from] move: Lunar Dance');
+					target.side.removeSideCondition('lunardance');
+				} else {
+					target.switchFlag = true;
+				}
+			}
+		}
 	},
 	magiccoat: {
 		inherit: true,
@@ -943,6 +970,16 @@ exports.BattleMovedex = {
 			this.add('-activate', source, 'move: Skill Swap');
 			source.setAbility(targetAbility);
 			target.setAbility(sourceAbility);
+		}
+	},
+	sleeptalk: {
+		inherit: true,
+		beforeMoveCallback: function (pokemon) {
+			if (pokemon.volatiles['choicelock'] || pokemon.volatiles['encore']) {
+				this.addMove('move', pokemon, 'Sleep Talk');
+				this.add('-fail', pokemon);
+				return true;
+			}
 		}
 	},
 	spikes: {

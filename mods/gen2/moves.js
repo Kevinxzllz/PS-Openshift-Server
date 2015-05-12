@@ -2,6 +2,10 @@
  * Gen 2 moves
  */
 exports.BattleMovedex = {
+	aeroblast: {
+		inherit: true,
+		critRatio: 3
+	},
 	bellydrum: {
 		inherit: true,
 		onHit: function (target) {
@@ -27,7 +31,16 @@ exports.BattleMovedex = {
 		},
 		beforeTurnCallback: function () {},
 		onTryHit: function () {},
-		effect: {}
+		effect: {},
+		priority: -1
+	},
+	crabhammer: {
+		inherit: true,
+		critRatio: 3
+	},
+	crosschop: {
+		inherit: true,
+		critRatio: 3
 	},
 	dig: {
 		inherit: true,
@@ -119,6 +132,18 @@ exports.BattleMovedex = {
 			}
 		}
 	},
+	focusenergy: {
+		inherit: true,
+		effect: {
+			onStart: function (pokemon) {
+				this.add('-start', pokemon, 'move: Focus Energy');
+			},
+			onModifyMovePriority: 1,
+			onModifyMove: function (move) {
+				move.critRatio += 1;
+			}
+		}
+	},
 	highjumpkick: {
 		inherit: true,
 		onMoveFail: function (target, source, move) {
@@ -136,6 +161,10 @@ exports.BattleMovedex = {
 				this.damage(this.clampIntRange(damage / 8, 1), source, source, 'jumpkick');
 			}
 		}
+	},
+	karatechop: {
+		inherit: true,
+		critRatio: 3
 	},
 	leechseed: {
 		inherit: true,
@@ -215,7 +244,8 @@ exports.BattleMovedex = {
 					this.effectData.damage = 2 * damage;
 				}
 			}
-		}
+		},
+		priority: -1
 	},
 	mirrormove: {
 		inherit: true,
@@ -263,6 +293,15 @@ exports.BattleMovedex = {
 		// Rage boosts in Gens 2-4 is for the duration of Rage only
 		// Disable does not build
 		inherit: true
+	},
+	razorleaf: {
+		inherit: true,
+		critRatio: 3
+	},
+	razorwind: {
+		inherit: true,
+		accuracy: 75,
+		critRatio: 3
 	},
 	reflect: {
 		inherit: true,
@@ -316,7 +355,12 @@ exports.BattleMovedex = {
 	},
 	skyattack: {
 		inherit: true,
+		critRatio: 1,
 		secondary: {}
+	},
+	slash: {
+		inherit: true,
+		critRatio: 3
 	},
 	sleeptalk: {
 		inherit: true,
@@ -369,6 +413,10 @@ exports.BattleMovedex = {
 			},
 			onTryPrimaryHitPriority: -1,
 			onTryPrimaryHit: function (target, source, move) {
+				if (move.stallingMove) {
+					this.add('-fail', source);
+					return null;
+				}
 				if (target === source) {
 					this.debug('sub bypass: self hit');
 					return;

@@ -455,6 +455,10 @@ exports.BattleScripts = {
 			if (moveData.status) {
 				if (!target.status) {
 					hitResult = target.setStatus(moveData.status, pokemon, move);
+					if (!hitResult && move.status) {
+						this.add('-immune', target, '[msg]');
+						return false;
+					}
 					didSomething = didSomething || hitResult;
 				} else if (!isSecondary) {
 					if (target.status === moveData.status) {
@@ -642,150 +646,6 @@ exports.BattleScripts = {
 	randomCCTeam: function (side) {
 		var team = [];
 
-		var natures = Object.keys(this.data.Natures);
-		var items = Object.keys(this.data.Items);
-
-		var hasDexNumber = {};
-		var formes = [[], [], [], [], [], []];
-
-		// pick six random pokemon--no repeats, even among formes
-		// also need to either normalize for formes or select formes at random
-		// unreleased are okay. No CAP for now, but maybe at some later date
-
-		var num;
-		for (var i = 0; i < 6; i++) {
-			do {
-				num = this.random(721) + 1;
-			} while (num in hasDexNumber);
-			hasDexNumber[num] = i;
-		}
-
-		for (var id in this.data.Pokedex) {
-			if (!(this.data.Pokedex[id].num in hasDexNumber)) continue;
-			var template = this.getTemplate(id);
-			if (template.learnset && template.species !== 'Pichu-Spiky-eared') {
-				formes[hasDexNumber[template.num]].push(template.species);
-			}
-		}
-
-		for (var i = 0; i < 6; i++) {
-			var poke = formes[i][this.random(formes[i].length)];
-			var template = this.getTemplate(poke);
-
-			//level balance--calculate directly from stats rather than using some silly lookup table
-			var mbstmin = 1307; //sunkern has the lowest modified base stat total, and that total is 807
-
-			var stats = template.baseStats;
-
-			//modified base stat total assumes 31 IVs, 85 EVs in every stat
-			var mbst = (stats["hp"] * 2 + 31 + 21 + 100) + 10;
-			mbst += (stats["atk"] * 2 + 31 + 21 + 100) + 5;
-			mbst += (stats["def"] * 2 + 31 + 21 + 100) + 5;
-			mbst += (stats["spa"] * 2 + 31 + 21 + 100) + 5;
-			mbst += (stats["spd"] * 2 + 31 + 21 + 100) + 5;
-			mbst += (stats["spe"] * 2 + 31 + 21 + 100) + 5;
-
-			var level = Math.floor(100 * mbstmin / mbst); //initial level guess will underestimate
-
-			while (level < 100) {
-				mbst = Math.floor((stats["hp"] * 2 + 31 + 21 + 100) * level / 100 + 10);
-				mbst += Math.floor(((stats["atk"] * 2 + 31 + 21 + 100) * level / 100 + 5) * level / 100); //since damage is roughly proportional to lvl
-				mbst += Math.floor((stats["def"] * 2 + 31 + 21 + 100) * level / 100 + 5);
-				mbst += Math.floor(((stats["spa"] * 2 + 31 + 21 + 100) * level / 100 + 5) * level / 100);
-				mbst += Math.floor((stats["spd"] * 2 + 31 + 21 + 100) * level / 100 + 5);
-				mbst += Math.floor((stats["spe"] * 2 + 31 + 21 + 100) * level / 100 + 5);
-
-				if (mbst >= mbstmin)
-					break;
-				level++;
-			}
-
-			//random gender--already handled by PS?
-
-			//random ability (unreleased hidden are par for the course)
-			var abilities = [template.abilities['0']];
-			if (template.abilities['1']) {
-				abilities.push(template.abilities['1']);
-			}
-			if (template.abilities['H']) {
-				abilities.push(template.abilities['H']);
-			}
-			var ability = abilities[this.random(abilities.length)];
-
-			//random nature
-			var nature = natures[this.random(natures.length)];
-
-			//random item
-			var item = '';
-
-			if (template.requiredItem) {
-				item = template.requiredItem;
-			} else {
-				item = items[this.random(items.length)];
-			}
-			if (this.getItem(item).megaStone) {
-				// we'll exclude mega stones for now
-				item = items[this.random(items.length)];
-			}
-			//since we're selecting forme at random, we gotta make sure forme/item combo is correct
-			while (poke === 'Arceus' && item.substr(-5) !== 'plate' || poke === 'Giratina' && item === 'griseousorb') {
-				item = items[this.random(items.length)];
-			}
-
-			//random IVs
-			var ivs = {hp: this.random(32), atk: this.random(32), def: this.random(32), spa: this.random(32), spd: this.random(32), spe: this.random(32)};
-
-			//random EVs
-			var evs = {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
-			var s = ["hp", "atk", "def", "spa", "spd", "spe"];
-			var evpool = 510;
-			do {
-				var x = s[this.random(s.length)];
-				var y = this.random(Math.min(256 - evs[x], evpool + 1));
-				evs[x] += y;
-				evpool -= y;
-			} while (evpool > 0);
-
-			//random happiness--useless, since return/frustration is currently a "cheat"
-			var happiness = this.random(256);
-
-			//random shininess?
-			var shiny = !this.random(1024);
-
-			//four random unique moves from movepool. don't worry about "attacking" or "viable"
-			var moves;
-			var pool = ['struggle'];
-			if (poke === 'Smeargle') {
-				pool = Object.keys(this.data.Movedex).exclude('struggle', 'chatter', 'magikarpsrevenge');
-			} else if (template.learnset) {
-				pool = Object.keys(template.learnset);
-			}
-			if (pool.length <= 4) {
-				moves = pool;
-			} else {
-				moves = [this.sampleNoReplace(pool), this.sampleNoReplace(pool), this.sampleNoReplace(pool), this.sampleNoReplace(pool)];
-			}
-
-			team.push({
-				name: poke,
-				moves: moves,
-				ability: ability,
-				evs: evs,
-				ivs: ivs,
-				nature: nature,
-				item: item,
-				level: level,
-				happiness: happiness,
-				shiny: shiny
-			});
-		}
-
-		//console.log(team);
-		return team;
-	},
-	randomHackmonsCCTeam: function (side) {
-		var team = [];
-
 		var itemPool = Object.keys(this.data.Items);
 		var abilityPool = Object.keys(this.data.Abilities);
 		var movePool = Object.keys(this.data.Movedex);
@@ -796,7 +656,7 @@ exports.BattleScripts = {
 
 		// pick six random pokemon--no repeats, even among formes
 		// also need to either normalize for formes or select formes at random
-		// unreleased are okay. No CAP for now, but maybe at some later date
+		// unreleased are okay but no CAP
 
 		var num;
 		for (var i = 0; i < 6; i++) {
@@ -1191,7 +1051,7 @@ exports.BattleScripts = {
 					if (!!counter['speedsetup'] || hasMove['encore'] || hasMove['raindance'] || hasMove['roar'] || hasMove['whirlwind']) rejected = true;
 					if (counter.setupType && hasMove['stormthrow']) rejected = true;
 					break;
-				case 'defog': case 'pursuit': case 'haze': case 'healingwish': case 'rapidspin': case 'spikes': case 'waterspout':
+				case 'defog': case 'pursuit': case 'haze': case 'healingwish': case 'rapidspin': case 'spikes': case 'toxicspikes': case 'waterspout':
 					if (counter.setupType || !!counter['speedsetup'] || (hasMove['rest'] && hasMove['sleeptalk'])) rejected = true;
 					break;
 				case 'fakeout':
@@ -2340,7 +2200,7 @@ exports.BattleScripts = {
 				case 'seismictoss': case 'nightshade': case 'superfang':
 					if (counter.setupType) rejected = true;
 					break;
-				case 'rapidspin': case 'perishsong': case 'magiccoat': case 'spikes':
+				case 'rapidspin': case 'perishsong': case 'magiccoat': case 'spikes': case 'toxicspikes':
 					if (counter.setupType) rejected = true;
 					break;
 				case 'uturn': case 'voltswitch':
@@ -2976,6 +2836,156 @@ exports.BattleScripts = {
 			level: level,
 			shiny: !this.random(template.id === 'missingno' ? 4 : 1024)
 		};
+	},
+	randomFactorySets: require('./factory-sets.json'),
+	randomFactorySet: function (template, slot, teamData, tier) {
+		var speciesId = toId(template.species);
+		var setList = this.randomFactorySets[tier][speciesId];
+		var effectivePool, priorityPool;
+
+		var itemsMax = {'choicespecs':1, 'choiceband':1, 'choicescarf':1};
+		var movesMax = {'rapidspin':1, 'batonpass':1, 'stealthrock':1, 'defog':1, 'spikes':1, 'toxicspikes':1};
+		var requiredMoves = {'stealthrock': 'hazardSet', 'rapidspin': 'hazardClear', 'defog': 'hazardClear'};
+
+		if (!teamData.forceResult) {
+			// Build a pool of eligible sets, given the team partners
+			// Also keep track of sets with moves the team requires
+			effectivePool = [];
+			priorityPool = [];
+			for (var i = 0, l = setList.length; i < l; i++) {
+				var curSet = setList[i];
+				var itemData = this.getItem(curSet.item);
+				if (teamData.megaCount > 0 && itemData.megaStone) continue;
+				if (itemsMax[itemData.id] && teamData.has[itemData.id] >= itemsMax[itemData.id]) continue;
+
+				var reject = false;
+				var hasRequiredMove = false;
+				for (var j = 0, m = curSet.moves.length; j < m; j++) {
+					var moveId = toId(curSet.moves[j]);
+					if (movesMax[moveId] && teamData.has[moveId] >= movesMax[moveId]) {
+						reject = true;
+						break;
+					}
+					if (requiredMoves[moveId] && !teamData.has[requiredMoves[moveId]]) {
+						hasRequiredMove = true;
+					}
+				}
+				if (reject) continue;
+				effectivePool.push(curSet);
+				if (hasRequiredMove) priorityPool.push(curSet);
+			}
+			if (priorityPool.length) effectivePool = priorityPool;
+		} else {
+			effectivePool = setList;
+		}
+
+		if (!effectivePool.length) return false;
+
+		var set = effectivePool[this.random(effectivePool.length)];
+		if (!set.name) set.name = set.species;
+		if (!set.evs) set.evs = {hp: 84, atk: 84, def: 84, spa: 84, spd: 84, spe: 84};
+		if (!set.ivs) set.ivs = {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31};
+		if (!set.level) set.level = 100;
+		if (!set.gender) set.gender = template.gender || (this.random() ? 'M' : 'F');
+		if (typeof set.shiny === 'undefined') set.shiny = !this.random(1024);
+		return set;
+	},
+	randomFactoryTeam: function (side, depth) {
+		if (!depth) depth = 0;
+		var forceResult = (depth >= 4);
+
+		var availableTiers = ['Uber', 'OU', 'UU', 'RU', 'NU'];
+		var chosenTier;
+
+		var currentSeed = this.seed.slice();
+		this.seed = this.startingSeed.slice();
+		chosenTier = availableTiers[this.random(availableTiers.length)];
+		this.seed = currentSeed;
+
+		var pokemonLeft = 0;
+		var pokemon = [];
+
+		var pokemonPool = Object.keys(this.randomFactorySets[chosenTier]);
+
+		var teamData = {typeCount: {}, typeComboCount: {}, baseFormes: {}, megaCount: 0, has: {}, forceResult: forceResult};
+		var requiredMoveFamilies = {'hazardSet': 1, 'hazardClear':1};
+		var requiredMoves = {'stealthrock': 'hazardSet', 'rapidspin': 'hazardClear', 'defog': 'hazardClear'};
+
+		while (pokemonPool.length && pokemonLeft < 6) {
+			var template = this.getTemplate(this.sampleNoReplace(pokemonPool));
+			if (!template.exists) continue;
+
+			// Limit to one of each species (Species Clause)
+			if (teamData.baseFormes[template.baseSpecies]) continue;
+
+			// Limit 2 of any type
+			var types = template.types;
+			var skip = false;
+			for (var t = 0; t < types.length; t++) {
+				if (teamData.typeCount[types[t]] > 1 && this.random(5)) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) continue;
+
+			var set = this.randomFactorySet(template, pokemon.length, teamData, chosenTier);
+			if (!set) continue;
+
+			// Limit 1 of any type combination
+			var typeCombo = types.slice().sort().join();
+			if (set.ability === 'Drought' || set.ability === 'Drizzle') {
+				// Drought and Drizzle don't count towards the type combo limit
+				typeCombo = set.ability;
+			}
+			if (typeCombo in teamData.typeComboCount) continue;
+
+			// Okay, the set passes, add it to our team
+			pokemon.push(set);
+			pokemonLeft++;
+
+			// Now that our Pokemon has passed all checks, we can update team data:
+			for (var t = 0; t < types.length; t++) {
+				if (types[t] in teamData.typeCount) {
+					teamData.typeCount[types[t]]++;
+				} else {
+					teamData.typeCount[types[t]] = 1;
+				}
+			}
+			teamData.typeComboCount[typeCombo] = 1;
+
+			teamData.baseFormes[template.baseSpecies] = 1;
+
+			var itemData = this.getItem(set.item);
+			if (itemData.megaStone) teamData.megaCount++;
+			if (itemData.id in teamData.has) {
+				teamData.has[itemData.id]++;
+			} else {
+				teamData.has[itemData.id] = 1;
+			}
+
+			for (var m = 0; m < set.moves.length; m++) {
+				var moveId = toId(set.moves[m]);
+				if (moveId in teamData.has) {
+					teamData.has[moveId]++;
+				} else {
+					teamData.has[moveId] = 1;
+				}
+				if (moveId in requiredMoves) {
+					teamData.has[requiredMoves[moveId]] = 1;
+				}
+			}
+		}
+		if (pokemon.length < 6) return this.randomFactoryTeam(side, ++depth);
+
+		// Quality control
+		if (!teamData.forceResult) {
+			for (var requiredFamily in requiredMoveFamilies) {
+				if (!teamData.has[requiredFamily]) return this.randomFactoryTeam(side, ++depth);
+			}
+		}
+
+		return pokemon;
 	},
 	randomMonotypeTeam: function (side) {
 		var pokemonLeft = 0;
