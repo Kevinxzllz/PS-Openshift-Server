@@ -128,6 +128,7 @@ var Room = (function () {
 			}
 		}
 		this.bannedUsers[userid] = userid;
+		if (user.autoconfirmed) this.bannedUsers[user.autoconfirmed] = userid;
 		for (var ip in user.ips) {
 			this.bannedIps[ip] = userid;
 		}
@@ -402,7 +403,7 @@ var GlobalRoom = (function () {
 	GlobalRoom.prototype.searchBattle = function (user, formatid) {
 		if (!user.connected) return;
 
-		formatid = toId(formatid);
+		formatid = Tools.getFormat(formatid).id;
 
 		user.prepBattle(formatid, 'search', null, this.finishSearchBattle.bind(this, user, formatid));
 	};
@@ -554,6 +555,7 @@ var GlobalRoom = (function () {
 		}
 	};
 	GlobalRoom.prototype.checkAutojoin = function (user, connection) {
+		if (!user.named) return;
 		for (var i = 0; i < this.staffAutojoin.length; i++) {
 			var room = Rooms.get(this.staffAutojoin[i]);
 			if (!room) {
@@ -566,6 +568,16 @@ var GlobalRoom = (function () {
 				// if staffAutojoin is true: autojoin if isStaff
 				// if staffAutojoin is String: autojoin if user.group in staffAutojoin
 				user.joinRoom(room.id, connection);
+			}
+		}
+		for (var i = 0; i < user.connections.length; i++) {
+			connection = user.connections[i];
+			if (connection.autojoins) {
+				var autojoins = connection.autojoins.split(',');
+				for (var j = 0; j < autojoins.length; j++) {
+					user.tryJoinRoom(autojoins[i], connection);
+				}
+				connection.autojoins = '';
 			}
 		}
 	};

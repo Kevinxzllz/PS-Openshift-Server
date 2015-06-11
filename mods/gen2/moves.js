@@ -207,7 +207,9 @@ exports.BattleMovedex = {
 		inherit: true,
 		accuracy: 90,
 		basePower: 50,
-		basePowerCallback: undefined,
+		basePowerCallback: function () {
+			return 50;
+		},
 		secondary: {
 			chance: 30,
 			volatileStatus: 'flinch'
@@ -262,7 +264,7 @@ exports.BattleMovedex = {
 		onHit: function (pokemon) {
 			var noMirror = {metronome: 1, mimic: 1, mirrormove: 1, sketch: 1, sleeptalk: 1, transform: 1};
 			var foe = pokemon.side.foe.active[0];
-			if (!foe || !foe.lastMove || (!pokemon.activeTurns && !foe.moveThisTurn) || noMirror[foe.lastMove] || pokemon.moves.indexOf(foe.lastMove) !== -1) {
+			if (!foe || !foe.lastMove || (!pokemon.activeTurns && !foe.moveThisTurn) || noMirror[foe.lastMove] || pokemon.moves.indexOf(foe.lastMove) >= 0) {
 				return false;
 			}
 			this.useMove(foe.lastMove, pokemon);
@@ -289,6 +291,28 @@ exports.BattleMovedex = {
 				this.heal(pokemon.maxhp / 4);
 			} else {
 				this.heal(pokemon.maxhp / 2);
+			}
+		}
+	},
+	outrage: {
+		inherit: true,
+		onMoveFail: function (target, source, move) {
+			source.addVolatile('lockedmove');
+		},
+		onAfterMove: function (pokemon) {
+			if (pokemon.volatiles['lockedmove'] && pokemon.volatiles['lockedmove'].duration === 1) {
+				pokemon.removeVolatile('lockedmove');
+			}
+		}
+	},
+	petaldance: {
+		inherit: true,
+		onMoveFail: function (target, source, move) {
+			source.addVolatile('lockedmove');
+		},
+		onAfterMove: function (pokemon) {
+			if (pokemon.volatiles['lockedmove'] && pokemon.volatiles['lockedmove'].duration === 1) {
+				pokemon.removeVolatile('lockedmove');
 			}
 		}
 	},
@@ -393,6 +417,14 @@ exports.BattleMovedex = {
 			this.useMove(move, pokemon);
 		}
 	},
+	solarbeam: {
+		inherit: true,
+		onBasePower: function (basePower, pokemon, target) {
+			if (this.isWeather('raindance')) {
+				return this.chainModify(0.5);
+			}
+		}
+	},
 	spikes: {
 		inherit: true,
 		effect: {
@@ -490,6 +522,17 @@ exports.BattleMovedex = {
 				this.heal(pokemon.maxhp / 4);
 			} else {
 				this.heal(pokemon.maxhp / 2);
+			}
+		}
+	},
+	thrash: {
+		inherit: true,
+		onMoveFail: function (target, source, move) {
+			source.addVolatile('lockedmove');
+		},
+		onAfterMove: function (pokemon) {
+			if (pokemon.volatiles['lockedmove'] && pokemon.volatiles['lockedmove'].duration === 1) {
+				pokemon.removeVolatile('lockedmove');
 			}
 		}
 	},

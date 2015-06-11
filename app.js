@@ -61,7 +61,7 @@ function runNpm(command) {
 	process.exit(0);
 }
 
-var isLegacyEngine = !global.Map;
+var isLegacyEngine = !(''.includes);
 
 var fs = require('fs');
 var path = require('path');
@@ -71,7 +71,7 @@ try {
 } catch (e) {
 	runNpm('install --production');
 }
-if (isLegacyEngine && !new Map().set()) {
+if (isLegacyEngine && !(''.includes)) {
 	runNpm('update --production');
 }
 
@@ -160,16 +160,19 @@ global.ResourceMonitor = {
 		name = (name ? ': ' + name : '');
 		if (ip in this.connections && duration < 30 * 60 * 1000) {
 			this.connections[ip]++;
-			if (this.connections[ip] < 500 && duration < 5 * 60 * 1000 && this.connections[ip] % 30 === 0) {
+			if (this.connections[ip] < 500 && duration < 5 * 60 * 1000 && this.connections[ip] % 60 === 0) {
 				this.log('[ResourceMonitor] IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
-			} else if (this.connections[ip] < 500 && this.connections[ip] % 90 === 0) {
+			} else if (this.connections[ip] < 500 && this.connections[ip] % 120 === 0) {
 				this.log('[ResourceMonitor] IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
 			} else if (this.connections[ip] === 500) {
 				this.log('[ResourceMonitor] IP ' + ip + ' has been banned for connection flooding (' + this.connections[ip] + ' times in the last ' + duration.duration() + name + ')');
 				return true;
 			} else if (this.connections[ip] > 500) {
-				if (this.connections[ip] % 250 === 0) {
-					this.log('[ResourceMonitor] Banned IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
+				if (this.connections[ip] % 500 === 0) {
+					var c = this.connections[ip] / 500;
+					if (c < 5 || c % 2 === 0 && c < 10 || c % 5 === 0) {
+						this.log('[ResourceMonitor] Banned IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
+					}
 				}
 				return true;
 			}
@@ -249,7 +252,7 @@ global.ResourceMonitor = {
 			if (typeof value === 'boolean') bytes += 4;
 			else if (typeof value === 'string') bytes += value.length * 2;
 			else if (typeof value === 'number') bytes += 8;
-			else if (typeof value === 'object' && objectList.indexOf(value) === -1) {
+			else if (typeof value === 'object' && objectList.indexOf(value) < 0) {
 				objectList.push(value);
 				for (var i in value) stack.push(value[i]);
 			}
@@ -420,7 +423,7 @@ fs.readFile(path.resolve(__dirname, 'config/ipbans.txt'), function (err, data) {
 	for (var i = 0; i < data.length; i++) {
 		data[i] = data[i].split('#')[0].trim();
 		if (!data[i]) continue;
-		if (data[i].indexOf('/') >= 0) {
+		if (data[i].includes('/')) {
 			rangebans.push(data[i]);
 		} else if (!Users.bannedIps[data[i]]) {
 			Users.bannedIps[data[i]] = '#ipban';

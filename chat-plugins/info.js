@@ -96,38 +96,48 @@ var commands = exports.commands = {
 		"/whois [username] - Get details on a username: alts (Requires: % @ & ~), group, IP address (Requires: @ & ~), and rooms."],
 
 	ipsearchall: 'ipsearch',
+	hostsearch: 'ipsearch',
 	ipsearch: function (target, room, user, connection, cmd) {
+		if (!target.trim()) return this.parse('/help ipsearch');
 		if (!this.can('rangeban')) return;
 		var results = [];
-		this.sendReply("Users with IP " + target + ":");
 
-		var isRange;
-		if (target.slice(-1) === '*') {
-			isRange = true;
-			target = target.slice(0, -1);
-		}
 		var isAll = (cmd === 'ipsearchall');
 
-		if (isRange) {
+		if (/[a-z]/.test(target)) {
+			// host
+			this.sendReply("Users with host " + target + ":");
 			for (var userid in Users.users) {
 				var curUser = Users.users[userid];
-				if (curUser.group === '~') continue;
+				if (!curUser.latestHost || !curUser.latestHost.endsWith(target)) continue;
+				if (results.push((curUser.connected ? " \u25C9 " : " \u25CC ") + " " + curUser.name) > 100 && !isAll) {
+					return this.sendReply("More than 100 users match the specified IP range. Use /ipsearchall to retrieve the full list.");
+				}
+			}
+		} else if (target.slice(-1) === '*') {
+			// IP range
+			this.sendReply("Users in IP range " + target + ":");
+			target = target.slice(0, -1);
+			for (var userid in Users.users) {
+				var curUser = Users.users[userid];
 				if (!curUser.latestIp.startsWith(target)) continue;
-				if (results.push((curUser.connected ? " + " : "-") + " " + curUser.name) > 100 && !isAll) {
+				if (results.push((curUser.connected ? " \u25C9 " : " \u25CC ") + " " + curUser.name) > 100 && !isAll) {
 					return this.sendReply("More than 100 users match the specified IP range. Use /ipsearchall to retrieve the full list.");
 				}
 			}
 		} else {
+			this.sendReply("Users with IP " + target + ":");
 			for (var userid in Users.users) {
 				var curUser = Users.users[userid];
 				if (curUser.latestIp === target) {
-					results.push((curUser.connected ? " + " : "-") + " " + curUser.name);
+					results.push((curUser.connected ? " \u25C9 " : " \u25CC ") + " " + curUser.name);
 				}
 			}
 		}
 		if (!results.length) return this.sendReply("No results found.");
 		return this.sendReply(results.join('; '));
 	},
+	ipsearchhelp: ["/ipsearch [ip|range|host] - Find all users with specified IP, IP range, or host (Requires: & ~)"],
 
 	/*********************************************************
 	 * Shortcuts
@@ -215,6 +225,7 @@ var commands = exports.commands = {
 				}
 				details = {
 					"Dex#": pokemon.num,
+					"Gen": pokemon.gen,
 					"Height": pokemon.heightm + " m",
 					"Weight": pokemon.weightkg + " kg <em>(" + weighthit + " BP)</em>",
 					"Dex Colour": pokemon.color,
@@ -231,7 +242,8 @@ var commands = exports.commands = {
 			} else if (newTargets[0].searchType === 'move') {
 				var move = Tools.getMove(newTargets[0].name);
 				details = {
-					"Priority": move.priority
+					"Priority": move.priority,
+					"Gen": move.gen
 				};
 
 				if (move.secondary || move.secondaries) details["<font color=black>&#10003; Secondary effect</font>"] = "";
@@ -267,7 +279,10 @@ var commands = exports.commands = {
 				}[move.target] || "Unknown";
 			} else if (newTargets[0].searchType === 'item') {
 				var item = Tools.getItem(newTargets[0].name);
-				details = {};
+				details = {
+					"Gen": item.gen
+				};
+
 				if (item.fling) {
 					details["Fling Base Power"] = item.fling.basePower;
 					if (item.fling.status) details["Fling Effect"] = item.fling.status;
@@ -394,8 +409,9 @@ var commands = exports.commands = {
 				continue;
 			}
 
-			if (target.indexOf(' type') > -1) {
-				target = target.charAt(0).toUpperCase() + target.substring(1, target.indexOf(' type'));
+			var typeIndex = target.indexOf(' type');
+			if (typeIndex >= 0) {
+				target = target.charAt(0).toUpperCase() + target.substring(1, typeIndex);
 				if (target in Tools.data.TypeChart) {
 					if (!searches['types']) searches['types'] = {};
 					if (Object.count(searches['types'], true) === 2 && !isNotSearch) return this.sendReplyBox("Specify a maximum of two types.");
@@ -406,7 +422,7 @@ var commands = exports.commands = {
 			}
 
 			var inequality = target.search(/>|<|=/);
-			if (inequality > -1) {
+			if (inequality >= 0) {
 				if (isNotSearch) return this.sendReplyBox("You cannot use the negation symbol '!' in stat ranges.");
 				inequality = target.charAt(inequality);
 				var targetParts = target.replace(/\s/g, '').split(inequality);
@@ -491,7 +507,7 @@ var commands = exports.commands = {
 						if ('lc' in searches[search]) {
 							// some LC legal Pokemon are stored in other tiers (Ferroseed/Murkrow etc)
 							// this checks for LC legality using the going criteria, instead of dex[mon].tier
-							var isLC = (dex[mon].evos && dex[mon].evos.length > 0) && !dex[mon].prevo && dex[mon].tier !== "LC Uber" && Tools.data.Formats['lc'].banlist.indexOf(dex[mon].species) === -1;
+							var isLC = (dex[mon].evos && dex[mon].evos.length > 0) && !dex[mon].prevo && dex[mon].tier !== "LC Uber" && Tools.data.Formats['lc'].banlist.indexOf(dex[mon].species) < 0;
 							if ((searches[search]['lc'] && !isLC) || (!searches[search]['lc'] && isLC)) {
 								delete dex[mon];
 								continue;
@@ -545,7 +561,7 @@ var commands = exports.commands = {
 					for (var mon in dex) {
 						if (!dex[mon].learnset) continue;
 						for (var move in searches[search]) {
-							var canLearn = (dex[mon].learnset.sketch && ['chatter', 'struggle', 'magikarpsrevenge'].indexOf(move) === -1) || dex[mon].learnset[move];
+							var canLearn = (dex[mon].learnset.sketch && ['chatter', 'struggle', 'magikarpsrevenge'].indexOf(move) < 0) || dex[mon].learnset[move];
 							if ((!canLearn && searches[search][move]) || (searches[search][move] === false && canLearn)) {
 								delete dex[mon];
 								break;
@@ -611,7 +627,7 @@ var commands = exports.commands = {
 
 		var results = [];
 		for (var mon in dex) {
-			if (dex[mon].baseSpecies && results.indexOf(dex[mon].baseSpecies) > -1) continue;
+			if (dex[mon].baseSpecies && results.indexOf(dex[mon].baseSpecies) >= 0) continue;
 			results.push(dex[mon].species);
 		}
 
@@ -665,8 +681,9 @@ var commands = exports.commands = {
 				target = target.substr(1);
 			}
 
-			if (target.indexOf(' type') > -1) {
-				target = target.charAt(0).toUpperCase() + target.substring(1, target.indexOf(' type'));
+			var typeIndex = target.indexOf(' type');
+			if (typeIndex >= 0) {
+				target = target.charAt(0).toUpperCase() + target.substring(1, typeIndex);
 				if (!(target in Tools.data.TypeChart)) return this.sendReplyBox("Type '" + Tools.escapeHTML(target) + "' not found.");
 				if (!searches['type']) searches['type'] = {};
 				if ((searches['type'][target] && isNotSearch) || (searches['type'][target] === false && !isNotSearch)) return this.sendReplyBox('A search cannot both exclude and include a type.');
@@ -720,7 +737,7 @@ var commands = exports.commands = {
 			}
 
 			var inequality = target.search(/>|<|=/);
-			if (inequality > -1) {
+			if (inequality >= 0) {
 				if (isNotSearch) return this.sendReplyBox("You cannot use the negation symbol '!' in quality ranges.");
 				inequality = target.charAt(inequality);
 				var targetParts = target.replace(/\s/g, '').split(inequality);
@@ -1006,7 +1023,7 @@ var commands = exports.commands = {
 		var template = Tools.getTemplate(targets[0]);
 		var move = {};
 		var problem;
-		var format = {rby:'gen1ou', gsc:'gen2ou', adv:'gen3oubeta', dpp:'gen4ou', bw2:'gen5ou'}[cmd.substring(0, 3)];
+		var format = {rby:'gen1ou', gsc:'gen2ou', adv:'gen3ou', dpp:'gen4ou', bw2:'gen5ou'}[cmd.substring(0, 3)];
 		var all = (cmd === 'learnall');
 		if (cmd === 'learn5') lsetData.set.level = 5;
 		if (cmd === 'g6learn') lsetData.format = {noPokebank: true};
@@ -1415,6 +1432,11 @@ var commands = exports.commands = {
 		this.sendReplyBox("<a href=\"https://www.smogon.com/sim/staff_list\">Pokemon Showdown Staff List</a>");
 	},
 
+	forums: function (target, room, user) {
+		if (!this.canBroadcast()) return;
+		this.sendReplyBox("<a href=\"http://www.smogon.com/forums/forums/pok%C3%A9mon-showdown.209\">Pokémon Showdown Forums</a>");
+	},
+
 	avatars: function (target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReplyBox('You can <button name="avatars">change your avatar</button> by clicking on it in the <button name="openOptions"><i class="icon-cog"></i> Options</button> menu in the upper right. Custom avatars are only obtainable by staff.');
@@ -1513,11 +1535,12 @@ var commands = exports.commands = {
 		if (target === 'all' || target === 'smogontriples' || target === 'triples') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3511522/\">Smogon Triples</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3540390/\">Smogon Triples Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'omofthemonth' || target === 'omotm' || target === 'month') {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3481155/\">Other Metagame of the Month</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3505227/\">Current OMotM: 2v2 Doubles</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3524254/\">Current OMotM: Linked</a><br />";
 		}
 		if (target === 'all' || target === 'seasonal') {
 			matched = true;
@@ -1556,12 +1579,13 @@ var commands = exports.commands = {
 			matched = true;
 			if (target !== 'all') buffer += "Battle with an inverted type chart.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3518146/\">Inverse Battle</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526371/\">Inverse Battle Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'almostanyability' || target === 'aaa') {
 			matched = true;
 			if (target !== 'all') buffer += "Pokémon can use any ability, barring the few that are banned.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3528058/\">Almost Any Ability</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3517258/\">Almost Any Ability Viability Ranking</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3538917/\">Almost Any Ability Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'stabmons') {
 			matched = true;
@@ -1573,22 +1597,19 @@ var commands = exports.commands = {
 			matched = true;
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523929/\">LC UU</a><br />";
 		}
+		if (target === 'all' || target === '2v2doubles' || target === '2v2') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3505227/\">2v2 Doubles</a><br />";
+		}
 		if (target === 'all' || target === 'averagemons') {
 			matched = true;
+			if (target !== 'all') buffer += "Every Pokémon has a stat spread of 100/100/100/100/100/100.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526481/\">Averagemons</a><br />";
-		}
-		if (target === 'all' || target === 'classichackmons' || target === 'hackmons' || target === 'ch') {
-			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3521887/\">Classic Hackmons</a><br />";
 		}
 		if (target === 'all' || target === 'hiddentype' || target === 'ht') {
 			matched = true;
 			if (target !== 'all') buffer += "Pokémon have an added type determined by their IVs. Same as the Hidden Power type.<br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3516349/\">Hidden Type</a><br />";
-		}
-		if (target === 'all' || target === 'middlecup' || target === 'mc') {
-			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3524287/\">Middle Cup</a><br />";
 		}
 		if (target === 'all' || target === 'outheorymon' || target === 'theorymon') {
 			matched = true;
@@ -1799,15 +1820,15 @@ var commands = exports.commands = {
 		}
 		if (target === 'all' || target === 'underused' || target === 'uu') {
 			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3537422/\">np: UU Stage 3</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3538856/\">np: UU Stage 3.1</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/uu/\">UU Banlist</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523649/\">UU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'rarelyused' || target === 'ru') {
 			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3537443/\">np: RU Stage 9</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3538971/\">np: RU Stage 10</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/dex/xy/tags/ru/\">RU Banlist</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3523627/\">RU Viability Ranking</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3538036/\">RU Viability Ranking</a><br />";
 		}
 		if (target === 'all' || target === 'neverused' || target === 'nu') {
 			matched = true;
@@ -1823,9 +1844,36 @@ var commands = exports.commands = {
 		}
 		if (target === 'all' || target === 'doublesou' || target === 'doubles' || target === 'smogondoubles') {
 			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3525739/\">np: Doubles OU Stage 1.5</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3538960/\">np: Doubles OU Stage 2</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3498688/\">Doubles OU Banlist</a><br />";
 			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3522814/\">Doubles OU Viability Ranking</a><br />";
+		}
+		if (target === 'all' || target === 'bw' || target === 'gen5') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3509218/#post-5522693\">BW Resources</a><br />";
+		}
+		if (target === 'all' || target === 'dpp' || target === 'gen4') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3509218/#post-5522692\">DPP Resources</a><br />";
+		}
+		if (target === 'all' || target === 'adv' || target === 'gen3') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3509218/#post-5522690\">ADV Resources</a><br />";
+		}
+		if (target === 'all' || target === 'gsc' || target === 'gen2') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3509218/#post-5522689\">GSC Resources</a><br />";
+		}
+		if (target === 'all' || target === 'rby' || target === 'gen1') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3509218/#post-5522688\">RBY Resources</a><br />";
+		}
+		if (target === 'vgc2015' || target === 'vgc' || target === 'vgc15') {
+			matched = true;
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3524352/\">VGC 2015 Rules</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3530547/\">VGC 2015 Viability Ranking</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3500650/\">VGC Learning Resources</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526666/\">Sample Teams for VGC 2015</a><br />";
 		}
 		if (!matched) {
 			return this.sendReply("The Tiers entry '" + target + "' was not found. Try /tiers for general help.");
@@ -1948,66 +1996,96 @@ var commands = exports.commands = {
 		}
 	},
 
-	spammode: function (target, room, user) {
-		if (!this.can('ban')) return false;
-
-		// NOTE: by default, spammode does nothing; it's up to you to set stricter filters
-		// in config for chatfilter/hostfilter. Put this above the spammode filters:
-		/*
-		if (!Config.spammode) return;
-		if (Config.spammode < Date.now()) {
-			delete Config.spammode;
-			return;
-		}
-		*/
-
-		if (target === 'off' || target === 'false') {
-			if (Config.spammode) {
-				delete Config.spammode;
-				this.privateModCommand("(" + user.name + " turned spammode OFF.)");
-			} else {
-				this.sendReply("Spammode is already off.");
-			}
-		} else if (!target || target === 'on' || target === 'true') {
-			if (Config.spammode) {
-				this.privateModCommand("(" + user.name + " renewed spammode for half an hour.)");
-			} else {
-				this.privateModCommand("(" + user.name + " turned spammode ON for half an hour.)");
-			}
-			Config.spammode = Date.now() + 30 * 60 * 1000;
-		} else {
-			this.sendReply("Unrecognized spammode setting.");
-		}
-	},
-
 	roll: 'dice',
 	dice: function (target, room, user) {
-		if (!target) return this.parse('/help dice');
+		if (!target || target.match(/[^d\d\s\-\+HL]/i)) return this.parse('/help dice');
 		if (!this.canBroadcast()) return;
-		var d = target.indexOf("d");
-		if (d >= 0) {
-			var num = parseInt(target.substring(0, d));
-			var faces;
-			if (target.length > d) faces = parseInt(target.substring(d + 1));
-			if (isNaN(num)) num = 1;
-			if (isNaN(faces)) return this.sendReply("The number of faces must be a valid integer.");
-			if (faces < 1 || faces > 1000) return this.sendReply("The number of faces must be between 1 and 1000");
-			if (num < 1 || num > 20) return this.sendReply("The number of dice must be between 1 and 20");
-			var rolls = [];
-			var total = 0;
-			for (var i = 0; i < num; ++i) {
-				rolls[i] = (Math.floor(faces * Math.random()) + 1);
-				total += rolls[i];
-			}
-			return this.sendReplyBox("Random number " + num + "x(1 - " + faces + "): " + rolls.join(", ") + "<br />Total: " + total);
+
+		// ~30 is widely regarded as the sample size required for sum to be a Gaussian distribution.
+		// This also sets a computation time constraint for safety.
+		var maxDice = 40;
+
+		var diceQuantity = 1;
+		var diceDataStart = target.indexOf('d');
+		if (diceDataStart >= 0) {
+			diceQuantity = Number(target.slice(0, diceDataStart));
+			target = target.slice(diceDataStart + 1);
+			if (!Number.isInteger(diceQuantity) || diceQuantity <= 0 || diceQuantity > maxDice) return this.sendReply("The amount of dice rolled should be a natural number up to " + maxDice + ".");
 		}
-		if (target && isNaN(target) || target.length > 21) return this.sendReply("The max roll must be a number under 21 digits.");
-		var maxRoll = (target) ? target : 6;
-		var rand = Math.floor(maxRoll * Math.random()) + 1;
-		return this.sendReplyBox("Random number (1 - " + maxRoll + "): " + rand);
+		var offset = 0;
+		var removeOutlier = 0;
+
+		var modifierData = target.match(/[\-\+]/);
+		if (modifierData) {
+			switch (target.slice(modifierData.index).trim().toLowerCase()) {
+			case '-l':
+				removeOutlier = -1;
+				break;
+			case '-h':
+				removeOutlier = +1;
+				break;
+			default:
+				offset = Number(target.slice(modifierData.index));
+				if (isNaN(offset)) return this.parse('/help dice');
+				if (!Number.isSafeInteger(offset)) return this.sendReply("The specified offset must be an integer up to " + Number.MAX_SAFE_INTEGER + ".");
+			}
+			if (removeOutlier && diceQuantity <= 1) return this.sendReply("More than one dice should be rolled before removing outliers.");
+			target = target.slice(0, modifierData.index);
+		}
+
+		var diceFaces = 6;
+		if (target.length) {
+			diceFaces = Number(target);
+			if (!Number.isSafeInteger(diceFaces) || diceFaces <= 0) {
+				return this.sendReply("Rolled dice must have a natural amount of faces up to " + Number.MAX_SAFE_INTEGER + ".");
+			}
+		}
+
+		if (diceQuantity > 1) {
+			// Make sure that we can deal with high rolls
+			if (!Number.isSafeInteger(offset < 0 ? diceQuantity * diceFaces : diceQuantity * diceFaces + offset)) {
+				return this.sendReply("The maximum sum of rolled dice must be lower or equal than " + Number.MAX_SAFE_INTEGER + ".");
+			}
+		}
+
+		var maxRoll = 0;
+		var minRoll = Number.MAX_SAFE_INTEGER;
+
+		var trackRolls = diceQuantity * (('' + diceFaces).length + 1) <= 60;
+		var rolls = [];
+		var rollSum = 0;
+
+		for (var i = 0; i < diceQuantity; ++i) {
+			var curRoll = Math.floor(Math.random() * diceFaces) + 1;
+			rollSum += curRoll;
+			if (curRoll > maxRoll) maxRoll = curRoll;
+			if (curRoll < minRoll) minRoll = curRoll;
+			if (trackRolls) rolls.push(curRoll);
+		}
+
+		// Apply modifiers
+
+		if (removeOutlier > 0) {
+			rollSum -= maxRoll;
+		} else if (removeOutlier < 0) {
+			rollSum -= minRoll;
+		}
+		if (offset) rollSum += offset;
+
+		// Reply with relevant information
+
+		var offsetFragment = "";
+		if (offset) offsetFragment += (offset > 0 ? "+" + offset : offset);
+
+		if (diceQuantity === 1) return this.sendReplyBox("Roll (1 - " + diceFaces + ")" + offsetFragment + ": " + rollSum);
+
+		var sumFragment = "<br />Sum" + offsetFragment + (removeOutlier ? " except " + (removeOutlier > 0 ? "highest" : "lowest") : "");
+		return this.sendReplyBox("" + diceQuantity + " rolls (1 - " + diceFaces + ")" + (trackRolls ? ": " + rolls.join(", ") : "") + sumFragment + ": " + rollSum);
 	},
 	dicehelp: ["/dice [max number] - Randomly picks a number between 1 and the number you choose.",
-		"/dice [number of dice]d[number of sides] - Simulates rolling a number of dice, e.g., /dice 2d4 simulates rolling two 4-sided dice."],
+		"/dice [number of dice]d[number of sides] - Simulates rolling a number of dice, e.g., /dice 2d4 simulates rolling two 4-sided dice.",
+		"/dice [number of dice]d[number of sides][+/-][offset] - Simulates rolling a number of dice and adding an offset to the sum, e.g., /dice 2d6+10: two standard dice are rolled; the result lies between 12 and 22.",
+		"/dice [number of dice]d[number of sides]-[H/L] - Simulates rolling a number of dice with removal of extreme values, e.g., /dice 3d8-L: rolls three 8-sided dice; the result ignores the lowest value."],
 
 	pr: 'pickrandom',
 	pick: 'pickrandom',

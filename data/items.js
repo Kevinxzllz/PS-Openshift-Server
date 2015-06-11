@@ -123,7 +123,9 @@ exports.BattleItems = {
 			basePower: 10
 		},
 		onStart: function (target) {
-			this.add('-item', target, 'Air Balloon');
+			if (!target.ignoringItem()) {
+				this.add('-item', target, 'Air Balloon');
+			}
 		},
 		onImmunity: function (type) {
 			if (type === 'Ground') return false;
@@ -2364,18 +2366,11 @@ exports.BattleItems = {
 			basePower: 30
 		},
 		onModifyDamage: function (damage, source, target, move) {
-			if (source) {
-				source.addVolatile('lifeorb');
-				return this.chainModify(1.3);
-			}
+			return this.chainModify(1.3);
 		},
-		effect: {
-			duration: 1,
-			onAfterMoveSecondarySelf: function (source, target, move) {
-				if (move && move.effectType === 'Move' && source && source.volatiles['lifeorb']) {
-					this.damage(source.maxhp / 10, source, source, this.getItem('lifeorb'));
-					source.removeVolatile('lifeorb');
-				}
+		onAfterMoveSecondarySelf: function (source, target, move) {
+			if (source && source !== target && move && move.category !== 'Status' && !move.ohko) {
+				this.damage(source.maxhp / 10, source, source, this.getItem('lifeorb'));
 			}
 		},
 		num: 270,
@@ -3986,7 +3981,7 @@ exports.BattleItems = {
 		},
 		onAfterMoveSecondarySelfPriority: -1,
 		onAfterMoveSecondarySelf: function (pokemon, target, move) {
-			if (move.category !== 'Status' && pokemon.lastDamage > 0) {
+			if (move.category !== 'Status') {
 				this.heal(pokemon.lastDamage / 8, pokemon);
 			}
 		},

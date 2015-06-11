@@ -33,47 +33,32 @@ exports.BattleScripts = {
 		// Modified stats are declared in BattlePokemon object in battle-engine.js in about line 303.
 		modifyStat: function (stat, modifier) {
 			if (!(stat in this.stats)) return;
-			this.modifiedStats[stat] = this.battle.clampIntRange(Math.floor(this.modifiedStats[stat] * modifier), 1);
+			this.modifiedStats[stat] = this.battle.clampIntRange(Math.floor(this.modifiedStats[stat] * modifier), 1, 999);
 		},
 		// In generation 1, boosting function increases the stored modified stat and checks for opponent's status.
 		boostBy: function (boost) {
 			var changed = false;
 			for (var i in boost) {
-				var delta = boost[i];
-				this.boosts[i] += delta;
+				this.boosts[i] += boost[i];
 				if (this.boosts[i] > 6) {
-					delta -= this.boosts[i] - 6;
 					this.boosts[i] = 6;
 				}
 				if (this.boosts[i] < -6) {
-					delta -= this.boosts[i] - (-6);
 					this.boosts[i] = -6;
 				}
-				if (delta) {
+				if (this.boosts[i]) {
 					changed = true;
 					// Recalculate the modified stat
 					if (this.stats[i]) {
 						var stat = this.template.baseStats[i];
 						stat = Math.floor(Math.floor(2 * stat + this.set.ivs[i] + Math.floor(this.set.evs[i] / 4)) * this.level / 100 + 5);
 						this.modifiedStats[i] = this.stats[i] = Math.floor(stat);
-						if (delta >= 0) {
-							this.modifyStat(i, [1, 1.5, 2, 2.5, 3, 3.5, 4][delta]);
+						if (this.boosts[i] >= 0) {
+							this.modifyStat(i, [1, 1.5, 2, 2.5, 3, 3.5, 4][this.boosts[i]]);
 						} else {
-							this.modifyStat(i, [100, 66, 50, 40, 33, 28, 25][-delta] / 100);
+							this.modifyStat(i, [100, 66, 50, 40, 33, 28, 25][-this.boosts[i]] / 100);
 						}
 					}
-				}
-			}
-
-			// Check the status of the Pokémon whose turn is not.
-			if (this.side.foe.active[0] && this.side.foe.active[0].status) {
-				// If it's paralysed, quarter its speed.
-				if (this.side.foe.active[0].status === 'par') {
-					this.side.foe.active[0].modifyStat('spe', 0.25);
-				}
-				// If it's burned, halve its attack.
-				if (this.side.foe.active[0].status === 'brn') {
-					this.side.foe.active[0].modifyStat('atk', 0.5);
 				}
 			}
 			this.update();
@@ -95,6 +80,8 @@ exports.BattleScripts = {
 		if (pokemon.movedThisTurn || !this.runEvent('BeforeMove', pokemon, target, move)) {
 			// Prevent invulnerability from persisting until the turn ends.
 			pokemon.removeVolatile('twoturnmove');
+			// Rampage moves end without causing confusion
+			delete pokemon.volatiles['lockedmove'];
 			this.clearActiveMove(true);
 			// This is only run for sleep.
 			this.runEvent('AfterMoveSelf', pokemon, target, move);
@@ -116,7 +103,7 @@ exports.BattleScripts = {
 			pokemon.lastMove = move.id;
 		}
 		this.useMove(move, pokemon, target, sourceEffect);
-		this.runEvent('AfterMove', target, pokemon, move);
+		this.singleEvent('AfterMove', move, null, pokemon, target, move);
 
 		// If rival fainted
 		if (target.hp <= 0) {
@@ -147,8 +134,7 @@ exports.BattleScripts = {
 						pokemon.volatiles['partialtrappinglock'].locked = target;
 						// Duration reset thus partially trapped at 2 always.
 						target.volatiles['partiallytrapped'].duration = 2;
-						// We deduct an additional PP that was not deducted earlier.
-						// Also get the move position for the PP change.
+						// We get the move position for the PP change.
 						var usedMovePos = -1;
 						for (var m in pokemon.moveset) {
 							if (pokemon.moveset[m].id === move.id) usedMovePos = m;
@@ -156,9 +142,6 @@ exports.BattleScripts = {
 						if (usedMovePos > -1 && pokemon.moveset[usedMovePos].pp === 0) {
 							// If we were on the middle of the 0 PP sequence, the PPs get reset to 63.
 							pokemon.moveset[usedMovePos].pp = 63;
-						} else {
-							// Otherwise, plain reduct.
-							pokemon.deductPP(move, null, target);
 						}
 					}
 				}
@@ -479,6 +462,21 @@ exports.BattleScripts = {
 			}
 			if (moveData.boosts && !target.fainted) {
 				this.boost(moveData.boosts, target, pokemon, move);
+
+				// Check the status of the Pokémon whose turn is not.
+				// When a move that affects stat levels is used, if the Pokémon whose turn it is not right now is paralyzed or
+				// burned, the correspoding stat penalties will be applied again to that Pokémon.
+				if (pokemon.side.foe.active[0] && pokemon.side.foe.active[0].status) {
+					// If it's paralysed, quarter its speed.
+					if (pokemon.side.foe.active[0].status === 'par') {
+						pokemon.side.foe.active[0].modifyStat('spe', 0.25);
+					}
+					// If it's burned, halve its attack.
+					if (pokemon.side.foe.active[0].status === 'brn') {
+						pokemon.side.foe.active[0].modifyStat('atk', 0.5);
+					}
+					pokemon.side.foe.active[0].update();
+				}
 			}
 			if (moveData.heal && !target.fainted) {
 				var d = target.heal(Math.floor(target.maxhp * moveData.heal[0] / moveData.heal[1]));
@@ -948,7 +946,7 @@ exports.BattleScripts = {
 		for (var i = 0; i < 6; i++) {
 			while (true) {
 				var x = Math.floor(Math.random() * 151) + 1;
-				if (teamdexno.indexOf(x) === -1) {
+				if (teamdexno.indexOf(x) < 0) {
 					teamdexno.push(x);
 					break;
 				}
@@ -1076,7 +1074,7 @@ exports.BattleScripts = {
 			// If you have a shitmon, you're covered in OUs and Ubers if possible
 			var tier = template.tier;
 			if (tier === 'LC' && (nuCount > 1 || hasShitmon)) continue;
-			if ((tier === 'NFE' || tier === 'UU') && (hasShitmon || (nuCount > 2 && this.random(1)))) continue;
+			if ((tier === 'NFE' || tier === 'UU' || tier === 'NU') && (hasShitmon || (nuCount > 2 && this.random(1)))) continue;
 			// Unless you have one of the worst mons, in that case we allow luck to give you both Mew and Mewtwo.
 			if (tier === 'Uber' && uberCount >= 1 && !hasShitmon) continue;
 
@@ -1122,7 +1120,7 @@ exports.BattleScripts = {
 			// Increment type bias counters.
 			if (tier === 'Uber') {
 				uberCount++;
-			} else if (tier === 'UU' || tier === 'NFE' || tier === 'LC') {
+			} else if (tier === 'UU' || tier === 'NU' || tier === 'NFE' || tier === 'LC') {
 				nuCount++;
 			}
 
@@ -1315,6 +1313,7 @@ exports.BattleScripts = {
 		var levelScale = {
 			LC: 96,
 			NFE: 90,
+			NU: 90,
 			UU: 85,
 			OU: 79,
 			Uber: 74

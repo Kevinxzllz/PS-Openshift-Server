@@ -54,6 +54,13 @@ exports.query = function queryDnsbl(ip, callback) {
 	queryDnsblLoop(ip, callback, reversedIpDot, 0);
 };
 
+// require cidr and dns separately for ease of hotpatching
+var cidr = require('./cidr.js');
+var rangeLeaseweb = cidr.checker('207.244.64.0/18');
+var rangeLeaseweb2 = cidr.checker('209.58.128.0/18');
+var rangeLeaseweb3 = cidr.checker('103.254.152.0/22');
+var rangeVoxility = cidr.checker('5.254.64.0/20');
+
 exports.reverse = function reverseDns(ip, callback) {
 	if (ip) {
 		if (ip.startsWith('106.76.') || ip.startsWith('106.77.') || ip.startsWith('106.78.') || ip.startsWith('106.79.') || ip.startsWith('112.110.') || ip.startsWith('27.97.') || ip.startsWith('49.15.') || ip.startsWith('49.14.') || ip.startsWith('1.187.')) {
@@ -68,12 +75,24 @@ exports.reverse = function reverseDns(ip, callback) {
 			callback(null, ['ovh.nohost']);
 			return;
 		}
+		if (ip.startsWith('104.131.') || ip.startsWith('104.236.') || ip.startsWith('198.199.') || ip.startsWith('45.55.') || ip.startsWith('192.241.') || ip.startsWith('162.243.') || ip.startsWith('107.170.')) {
+			callback(null, ['digitalocean.nohost']);
+			return;
+		}
 		if (ip.startsWith('178.62.')) {
 			callback(null, ['digitalocean.nohost']);
 			return;
 		}
+		if (ip.startsWith('46.16.36.')) {
+			callback(null, ['anchorfree.nohost']);
+			return;
+		}
 		if (ip.startsWith('216.172.142.')) {
 			callback(null, ['egihosting.nohost']);
+			return;
+		}
+		if (rangeLeaseweb(ip) || rangeLeaseweb2(ip) || rangeLeaseweb3(ip) || rangeVoxility(ip)) {
+			callback(null, ['zenmate.nohost']);
 			return;
 		}
 	}

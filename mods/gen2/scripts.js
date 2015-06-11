@@ -79,6 +79,8 @@ exports.BattleScripts = {
 		if (!this.runEvent('BeforeMove', pokemon, target, move)) {
 			// Prevent invulnerability from persisting until the turn ends
 			pokemon.removeVolatile('twoturnmove');
+			// Rampage moves end without causing confusion
+			delete pokemon.volatiles['lockedmove'];
 			this.clearActiveMove(true);
 			// This is only run for sleep and fully paralysed.
 			this.runEvent('AfterMoveSelf', pokemon, target, move);
@@ -102,7 +104,7 @@ exports.BattleScripts = {
 		}
 		pokemon.moveUsed(move);
 		this.useMove(move, pokemon, target, sourceEffect);
-		this.runEvent('AfterMove', target, pokemon, move);
+		this.singleEvent('AfterMove', move, null, pokemon, target, move);
 		if (!move.selfSwitch && target.hp > 0) this.runEvent('AfterMoveSelf', pokemon, target, move);
 	},
 	moveHit: function (target, pokemon, move, moveData, isSecondary, isSelf) {
@@ -155,7 +157,7 @@ exports.BattleScripts = {
 				didSomething = true;
 			}
 			if (damage === false || damage === null) {
-				if (damage === false) {
+				if (damage === false && !isSecondary && !isSelf) {
 					this.add('-fail', target);
 				}
 				this.debug('damage calculation interrupted');
@@ -348,7 +350,7 @@ exports.BattleScripts = {
 
 		// Happens after crit calculation
 		if (basePower) {
-			basePower = this.runEvent('BasePower', pokemon, target, move, basePower);
+			basePower = this.runEvent('BasePower', pokemon, target, move, basePower, true);
 			if (move.basePowerModifier) {
 				basePower *= move.basePowerModifier;
 			}

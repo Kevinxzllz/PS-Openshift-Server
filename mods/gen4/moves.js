@@ -766,7 +766,7 @@ exports.BattleMovedex = {
 			var disallowedMoves = {chatter:1, metronome:1, mimic:1, sketch:1, struggle:1, transform:1};
 			if (source.transformed || !target.lastMove || disallowedMoves[target.lastMove] || source.moves.indexOf(target.lastMove) !== -1 || target.volatiles['substitute']) return false;
 			var moveslot = source.moves.indexOf('mimic');
-			if (moveslot === -1) return false;
+			if (moveslot < 0) return false;
 			var move = Tools.getMove(target.lastMove);
 			source.moveset[moveslot] = {
 				move: move.name,
@@ -834,7 +834,8 @@ exports.BattleMovedex = {
 	},
 	outrage: {
 		inherit: true,
-		pp: 15
+		pp: 15,
+		onAfterMove: function () {}
 	},
 	payback: {
 		inherit: true,
@@ -848,7 +849,8 @@ exports.BattleMovedex = {
 	petaldance: {
 		inherit: true,
 		basePower: 90,
-		pp: 20
+		pp: 20,
+		onAfterMove: function () {}
 	},
 	poisongas: {
 		inherit: true,
@@ -941,9 +943,9 @@ exports.BattleMovedex = {
 		inherit: true,
 		onHit: function (target, source) {
 			var disallowedMoves = {chatter:1, sketch:1, struggle:1};
-			if (source.transformed || !target.lastMove || disallowedMoves[target.lastMove] || source.moves.indexOf(target.lastMove) !== -1 || target.volatiles['substitute']) return false;
+			if (source.transformed || !target.lastMove || disallowedMoves[target.lastMove] || source.moves.indexOf(target.lastMove) >= 0 || target.volatiles['substitute']) return false;
 			var moveslot = source.moves.indexOf('sketch');
-			if (moveslot === -1) return false;
+			if (moveslot < 0) return false;
 			var move = Tools.getMove(target.lastMove);
 			var sketchedMove = {
 				move: move.name,
@@ -1067,7 +1069,8 @@ exports.BattleMovedex = {
 	thrash: {
 		inherit: true,
 		basePower: 90,
-		pp: 20
+		pp: 20,
+		onAfterMove: function () {}
 	},
 	torment: {
 		inherit: true,

@@ -147,20 +147,18 @@ exports.BattleAbilities = {
 		num: 107
 	},
 	"arenatrap": {
-		desc: "Prevents adjacent opposing Pokemon from choosing to switch out unless they are immune to trapping or have immunity to Ground.",
-		shortDesc: "Prevents adjacent foes from choosing to switch unless they are immune to Ground.",
+		desc: "Prevents adjacent opposing Pokemon from choosing to switch out unless they are immune to trapping or are airborne.",
+		shortDesc: "Prevents adjacent foes from choosing to switch unless they are airborne.",
 		onFoeModifyPokemon: function (pokemon) {
 			if (!this.isAdjacent(pokemon, this.effectData.target)) return;
-			if (!pokemon.runImmunity('Ground', false)) return;
-			if (!pokemon.hasType('Flying') || pokemon.hasItem('ironball') || this.getPseudoWeather('gravity') || pokemon.volatiles['ingrain']) {
+			if (pokemon.isGrounded()) {
 				pokemon.tryTrap(true);
 			}
 		},
 		onFoeMaybeTrapPokemon: function (pokemon, source) {
 			if (!source) source = this.effectData.target;
 			if (!this.isAdjacent(pokemon, source)) return;
-			if (!pokemon.runImmunity('Ground', false)) return;
-			if (!pokemon.hasType('Flying') || pokemon.hasItem('ironball') || this.getPseudoWeather('gravity') || pokemon.volatiles['ingrain']) {
+			if (pokemon.isGrounded()) {
 				pokemon.maybeTrapped = true;
 			}
 		},
@@ -333,12 +331,11 @@ exports.BattleAbilities = {
 		desc: "This Pokemon's type changes to match the type of the last move that hit it, unless that type is already one of its types. This effect applies after all hits from a multi-hit move; Sheer Force prevents it from activating if the move has a secondary effect.",
 		shortDesc: "This Pokemon's type changes to the type of a move it's hit by, unless it has the type.",
 		onAfterMoveSecondary: function (target, source, move) {
-			if (target.isActive && move && move.effectType === 'Move' && move.category !== 'Status') {
-				if (!target.hasType(move.type)) {
-					if (!target.setType(move.type)) return false;
-					this.add('-start', target, 'typechange', move.type, '[from] Color Change');
-					target.update();
-				}
+			var type = move.type;
+			if (target.isActive && move.effectType === 'Move' && move.category !== 'Status' && type !== '???' && !target.hasType(type)) {
+				if (!target.setType(type)) return false;
+				this.add('-start', target, 'typechange', type, '[from] Color Change');
+				target.update();
 			}
 		},
 		id: "colorchange",
@@ -520,7 +517,7 @@ exports.BattleAbilities = {
 				for (var j = 0; j < this.sides[i].active.length; j++) {
 					var target = this.sides[i].active[j];
 					if (target === pokemon) continue;
-					if (target && target.hp && target.ability === 'deltastream' && target.ignore['Ability'] !== true) {
+					if (target && target.hp && target.hasAbility('deltastream')) {
 						this.weatherData.source = target;
 						return;
 					}
@@ -548,7 +545,7 @@ exports.BattleAbilities = {
 				for (var j = 0; j < this.sides[i].active.length; j++) {
 					var target = this.sides[i].active[j];
 					if (target === pokemon) continue;
-					if (target && target.hp && target.ability === 'desolateland' && target.ignore['Ability'] !== true) {
+					if (target && target.hp && target.hasAbility('desolateland')) {
 						this.weatherData.source = target;
 						return;
 					}
@@ -1303,11 +1300,7 @@ exports.BattleAbilities = {
 	"klutz": {
 		desc: "This Pokemon's held item has no effect. This Pokemon cannot use Fling successfully. Macho Brace, Power Anklet, Power Band, Power Belt, Power Bracer, Power Lens, and Power Weight still have their effects.",
 		shortDesc: "This Pokemon's held item has no effect, except Macho Brace. Fling cannot be used.",
-		onModifyPokemonPriority: 1,
-		onModifyPokemon: function (pokemon) {
-			if (pokemon.getItem().megaEvolves) return;
-			pokemon.ignore['Item'] = true;
-		},
+		// Item suppression implemented in BattlePokemon.ignoringItem() within battle-engine.js
 		id: "klutz",
 		name: "Klutz",
 		rating: -1,
@@ -1556,18 +1549,7 @@ exports.BattleAbilities = {
 		onStart: function (pokemon) {
 			this.add('-ability', pokemon, 'Mold Breaker');
 		},
-		onAllyModifyPokemonPriority: 100,
-		onAllyModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target && pokemon !== this.activePokemon) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
-		onFoeModifyPokemonPriority: 100,
-		onFoeModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
+		stopAttackEvents: true,
 		id: "moldbreaker",
 		name: "Mold Breaker",
 		rating: 3.5,
@@ -2003,7 +1985,7 @@ exports.BattleAbilities = {
 				for (var j = 0; j < this.sides[i].active.length; j++) {
 					var target = this.sides[i].active[j];
 					if (target === pokemon) continue;
-					if (target && target.hp && target.ability === 'primordialsea' && target.ignore['Ability'] !== true) {
+					if (target && target.hp && target.hasAbility('primordialsea')) {
 						this.weatherData.source = target;
 						return;
 					}
@@ -2151,7 +2133,9 @@ exports.BattleAbilities = {
 	"rockhead": {
 		desc: "This Pokemon does not take recoil damage besides Struggle, Life Orb, and crash damage.",
 		shortDesc: "This Pokemon does not take recoil damage besides Struggle/Life Orb/crash damage.",
-		// Implemented in scripts.js
+		onDamage: function (damage, target, source, effect) {
+			if (effect.id === 'recoil' && this.activeMove.id !== 'struggle') return null;
+		},
 		id: "rockhead",
 		name: "Rock Head",
 		rating: 3,
@@ -2827,16 +2811,7 @@ exports.BattleAbilities = {
 		onStart: function (pokemon) {
 			this.add('-ability', pokemon, 'Teravolt');
 		},
-		onAllyModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target && pokemon !== this.activePokemon) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
-		onFoeModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
+		stopAttackEvents: true,
 		id: "teravolt",
 		name: "Teravolt",
 		rating: 3.5,
@@ -2977,16 +2952,7 @@ exports.BattleAbilities = {
 		onStart: function (pokemon) {
 			this.add('-ability', pokemon, 'Turboblaze');
 		},
-		onAllyModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target && pokemon !== this.activePokemon) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
-		onFoeModifyPokemon: function (pokemon) {
-			if (this.activePokemon === this.effectData.target) {
-				pokemon.ignore['Ability'] = 'A';
-			}
-		},
+		stopAttackEvents: true,
 		id: "turboblaze",
 		name: "Turboblaze",
 		rating: 3.5,

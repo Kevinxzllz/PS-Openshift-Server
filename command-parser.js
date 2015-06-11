@@ -55,7 +55,7 @@ var modlog = exports.modlog = {lobby: fs.createWriteStream(LOGS_DIR + 'modlog/mo
  * Can this user talk?
  * Shows an error message if not.
  */
-function canTalk(user, room, connection, message) {
+function canTalk(user, room, connection, message, targetUser) {
 	if (!user.named) {
 		connection.popup("You must choose a name before you can talk.");
 		return false;
@@ -83,9 +83,11 @@ function canTalk(user, room, connection, message) {
 					userGroup = ' ';
 				}
 			}
-			if (!user.autoconfirmed && (room.auth && room.auth[user.userid] || user.group) === ' ' && room.modchat === 'autoconfirmed') {
-				connection.sendTo(room, "Because moderated chat is set, your account must be at least one week old and you must have won at least one ladder game to speak in this room.");
-				return false;
+			if (room.modchat === 'autoconfirmed') {
+				if (!user.autoconfirmed && userGroup === ' ') {
+					connection.sendTo(room, "Because moderated chat is set, your account must be at least one week old and you must have won at least one ladder game to speak in this room.");
+					return false;
+				}
 			} else if (Config.groupsranking.indexOf(userGroup) < Config.groupsranking.indexOf(room.modchat)) {
 				var groupName = Config.groups[room.modchat].name || room.modchat;
 				connection.sendTo(room, "Because moderated chat is set, you must be of rank " + groupName + " or higher to speak in this room.");
@@ -123,7 +125,7 @@ function canTalk(user, room, connection, message) {
 		}
 
 		if (Config.chatfilter) {
-			return Config.chatfilter(message, user, room, connection);
+			return Config.chatfilter(message, user, room, connection, targetUser);
 		}
 		return message;
 	}
@@ -326,9 +328,9 @@ var parse = exports.parse = function (message, room, user, connection, levelsDee
 				}
 				return parse(message, room, user, connection, levelsDeep + 1);
 			},
-			canTalk: function (message, relevantRoom) {
+			canTalk: function (message, relevantRoom, targetUser) {
 				var innerRoom = (relevantRoom !== undefined) ? relevantRoom : room;
-				return canTalk(user, innerRoom, connection, message);
+				return canTalk(user, innerRoom, connection, message, targetUser);
 			},
 			canHTML: function (html) {
 				html = '' + (html || '');
