@@ -83,8 +83,8 @@ if (isLegacyEngine && !(''.includes)) {
 // Synchronously, since it's needed before we can start the server
 //if (!fs.existsSync('./config/config.js')) {
 	console.log("config.js doesn't exist - creating one with default settings...");
-	fs.writeFileSync(path.resolve(__dirname, 'config/config.js'),
-		fs.readFileSync(path.resolve(__dirname, 'config/config-example.js'))
+	fs.writeFileSync('config/config.js',
+		fs.readFileSync('config/config-example.js')
 	);
 //}
 

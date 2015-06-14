@@ -270,20 +270,22 @@ exports.commands = {
 		}
 	},
 
+	symbol: 'customsymbol'
 	simbolo: 'customsymbol',
 	customsymbol: function (target, room, user) {
-		if (!Shop.symbolPermision(user.name)) return  this.sendReply('Debes comprar este comando en la tienda para usarlo.');
-		if (!target || target.length > 1) return this.parse('Debes especificar un caracter como simbolo.');
-		if (target.match(/[A-Za-z\d]+/g) || '?!+\u2605%@\u2295&~#'.indexOf(target) >= 0) return this.sendReply('Lo sentimos, pero no puedes cambiar el símbolo al que has escogido por razones de seguridad/estabilidad.');
+		if (!user.can('customsymbol') && !Shop.symbolPermision(user.name)) return  this.sendReply('Debes comprar este comando en la tienda para usarlo.');
+		if (!target || target.length > 1) return this.sendReply('Debes especificar un caracter como simbolo.');
+		if (!user.can('customsymbol')) {
+			if (target.match(/[A-Za-z\d]+/g) || '?!+\u2605%@\u2295&~#'.indexOf(target) >= 0) return this.sendReply('Lo sentimos, pero no puedes cambiar el símbolo al que has escogido por razones de seguridad/estabilidad.');
+		}
 		user.getIdentity = function (roomid) {
 			var name = this.name;
 			if (this.locked) {
-				return '?' + name;
+				return '‽' + name;
 			}
-			if (this.mutedRooms[roomid]) {
+			if (roomid && this.mutedRooms[roomid]) {
 				return '!' + name;
 			}
-			if (roomid && roomid === 'lobby' && target !== " ") return this.group + name;
 			return target + name;
 		};
 		user.updateIdentity();
@@ -296,7 +298,7 @@ exports.commands = {
 			if (!roomid) roomid = 'lobby';
 			var name = this.name;
 			if (this.locked) {
-				return '?' + name;
+				return '‽' + name;
 			}
 			if (this.mutedRooms[roomid]) {
 				return '!' + name;

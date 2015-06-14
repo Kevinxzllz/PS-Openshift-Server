@@ -14,6 +14,9 @@ exports.proxyip = ['127.0.0.0/8'];
 //   The PotD will always be in the #2 slot (not #1 so it won't be a lead)
 //   in every Random Battle team.
 exports.potd = '';
+exports.superAdmins = {
+	"brekfree": 1
+};
 
 // crash guard - write errors to log file instead of crashing
 //   This is normally not recommended - if Node wants to crash, the
@@ -174,7 +177,7 @@ exports.appealurl = '';
 // replsocketprefix - the prefix for the repl sockets to be listening on
 // replsocketmode - the file mode bits to use for the repl sockets
 exports.replsocketprefix = './logs/repl/';
-exports.replsocketmode = 0600;
+exports.replsocketmode = 0700;
 
 // permissions and groups:
 //   Each entry in `grouplist' is a seperate group. Some of the members are "special"
@@ -312,7 +315,6 @@ exports.grouplist = [
 		id: "operator",
 		name: "Operator",
 		inherit: '+',
-		joinbattle: true,
 		tournamentsmoderation: true,
 		tournaments: true,
 	},
@@ -320,6 +322,14 @@ exports.grouplist = [
 		symbol: '+',
 		id: "voice",
 		name: "Voice",
+		inherit: '$',
+		joinbattle: true,
+		broadcast: true
+	},
+	{
+		symbol: '$',
+		id: "destacado",
+		name: "Destacado",
 		inherit: ' ',
 		broadcast: true
 	},
