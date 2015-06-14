@@ -270,7 +270,7 @@ exports.commands = {
 		}
 	},
 
-	symbol: 'customsymbol'
+	symbol: 'customsymbol',
 	simbolo: 'customsymbol',
 	customsymbol: function (target, room, user) {
 		if (!user.can('customsymbol') && !Shop.symbolPermision(user.name)) return  this.sendReply('Debes comprar este comando en la tienda para usarlo.');

@@ -47,3 +47,10 @@ local_settings.py
 pip-log.txt
 
 config/chatrooms.json
+config/authcasino.json
+config/botbannedusers.json
+config/hpl.json
+config/config.js
+config/clans.json
+config/botphrases.json
+config/botbannedwords.json
