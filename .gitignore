@@ -46,3 +46,4 @@ local_settings.py
 
 pip-log.txt
 
+config/chatrooms.json
