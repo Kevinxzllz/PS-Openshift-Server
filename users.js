@@ -805,7 +805,7 @@ User = (function () {
 	};
 	User.prototype.filterName = function (name) {
 		if (Config.namefilter) {
-			name = Config.namefilter(name);
+			name = Config.namefilter(name, this);
 		}
 		name = toName(name);
 		name = name.replace(/^[^A-Za-z0-9]+/, "");
@@ -1002,8 +1002,11 @@ User = (function () {
 				this.connections = [];
 				// merge IPs
 				for (var ip in this.ips) {
-					if (user.ips[ip]) user.ips[ip] += this.ips[ip];
-					else user.ips[ip] = this.ips[ip];
+					if (user.ips[ip]) {
+						user.ips[ip] += this.ips[ip];
+					} else {
+						user.ips[ip] = this.ips[ip];
+					}
 				}
 				this.ips = {};
 				user.latestIp = this.latestIp;
@@ -1083,8 +1086,11 @@ User = (function () {
 			str += ' socket' + i + '[';
 			var first = true;
 			for (var j in connection.rooms) {
-				if (first) first = false;
-				else str += ', ';
+				if (first) {
+					first = false;
+				} else {
+					str += ', ';
+				}
 				str += j;
 			}
 			str += ']';
@@ -1409,7 +1415,7 @@ User = (function () {
 		}
 		if (room.isPrivate) {
 			if (!this.named) {
-				return connection.sendTo(roomid, "|noinit|namerequired|You must have a name in order to join the room '" + roomid + "'.");
+				return null;
 			}
 		}
 
@@ -1721,6 +1727,7 @@ Connection = (function () {
 
 		this.ip = ip || '';
 	}
+	Connection.prototype.autojoin = '';
 
 	Connection.prototype.sendTo = function (roomid, data) {
 		if (roomid && roomid.id) roomid = roomid.id;

@@ -10788,10 +10788,9 @@ exports.BattleMovedex = {
 		priority: 0,
 		flags: {snatch: 1},
 		onHit: function (pokemon) {
-			if (!pokemon.item && pokemon.lastItem) {
-				pokemon.setItem(pokemon.lastItem);
-				this.add("-item", pokemon, pokemon.getItem(), '[from] move: Recycle');
-			} else return false;
+			if (pokemon.item || !pokemon.lastItem) return false;
+			pokemon.setItem(pokemon.lastItem);
+			this.add('-item', pokemon, pokemon.getItem(), '[from] move: Recycle');
 		},
 		secondary: false,
 		target: "self",
@@ -13484,7 +13483,7 @@ exports.BattleMovedex = {
 				}
 				var damage = this.getDamage(source, target, move);
 				if (!damage && damage !== 0) {
-					this.add('-activate', target, 'Substitute', '[block] ' + move.name);
+					this.add('-fail', target);
 					return null;
 				}
 				damage = this.runEvent('SubDamage', target, source, move, damage);

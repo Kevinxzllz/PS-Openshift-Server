@@ -175,21 +175,9 @@ exports.Formats = [
 		section: "ORAS Doubles",
 
 		gameType: 'doubles',
-		searchShow: false,
 		ruleset: ['Pokemon', 'Standard Doubles', 'Team Preview'],
 		banlist: ['Arceus', 'Dialga', 'Giratina', 'Giratina-Origin', 'Groudon', 'Ho-Oh', 'Kyogre', 'Kyurem-White', 'Lugia', 'Mewtwo',
 			'Palkia', 'Rayquaza', 'Reshiram', 'Xerneas', 'Yveltal', 'Zekrom', 'Salamencite', 'Soul Dew', 'Dark Void',
-			'Gravity ++ Grass Whistle', 'Gravity ++ Hypnosis', 'Gravity ++ Lovely Kiss', 'Gravity ++ Sing', 'Gravity ++ Sleep Powder', 'Gravity ++ Spore'
-		]
-	},
-	{
-		name: "Doubles OU (suspect test)",
-		section: "ORAS Doubles",
-
-		gameType: 'doubles',
-		ruleset: ['Pokemon', 'Standard Doubles', 'Team Preview'],
-		banlist: ['Arceus', 'Dialga', 'Giratina', 'Giratina-Origin', 'Groudon', 'Ho-Oh', 'Kyogre', 'Kyurem-White', 'Lugia', 'Mewtwo',
-			'Palkia', 'Rayquaza', 'Reshiram', 'Xerneas', 'Yveltal', 'Zekrom', 'Soul Dew', 'Dark Void',
 			'Gravity ++ Grass Whistle', 'Gravity ++ Hypnosis', 'Gravity ++ Lovely Kiss', 'Gravity ++ Sing', 'Gravity ++ Sleep Powder', 'Gravity ++ Spore'
 		]
 	},
@@ -1079,6 +1067,20 @@ exports.Formats = [
 		ruleset: ['Cancel Mod']
 	},
 	{
+		name: "[Gen 4] Doubles Custom Game",
+		section: 'Past Generations',
+
+		mod: 'gen4',
+		gameType: 'doubles',
+		searchShow: false,
+		canUseRandomTeam: true,
+		debug: true,
+		maxLevel: 9999,
+		defaultLevel: 100,
+		// no restrictions
+		ruleset: ['Cancel Mod']
+	},
+	{
 		name: "[Gen 3] OU",
 		section: "Past Generations",
 
@@ -1136,6 +1138,15 @@ exports.Formats = [
 		mod: 'gen1',
 		ruleset: ['Pokemon', 'Standard'],
 		banlist: ['Uber']
+	},
+	{
+		name: "[Gen 1] Ubers",
+		section: "Past Generations",
+
+		mod: 'gen1',
+		searchShow: false,
+		ruleset: ['Pokemon', 'Standard'],
+		banlist: []
 	},
 	{
 		name: "[Gen 1] OU (tradeback)",

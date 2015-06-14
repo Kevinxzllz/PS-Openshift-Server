@@ -11,7 +11,7 @@
 
 const TIMEOUT_EMPTY_DEALLOCATE = 10 * 60 * 1000;
 const TIMEOUT_INACTIVE_DEALLOCATE = 40 * 60 * 1000;
-const REPORT_USER_STATS_INTERVAL = 1000 * 60 * 10;
+const REPORT_USER_STATS_INTERVAL = 10 * 60 * 1000;
 
 var fs = require('fs');
 
@@ -332,8 +332,11 @@ var GlobalRoom = (function () {
 				formatListText += '|,' + (format.column || 1) + '|' + section;
 			}
 			formatListText += '|' + format.name;
-			if (!format.challengeShow) formatListText += ',,';
-			else if (!format.searchShow) formatListText += ',';
+			if (!format.challengeShow) {
+				formatListText += ',,';
+			} else if (!format.searchShow) {
+				formatListText += ',';
+			}
 			if (format.team) formatListText += ',#';
 		}
 		return formatListText;
@@ -575,7 +578,7 @@ var GlobalRoom = (function () {
 			if (connection.autojoins) {
 				var autojoins = connection.autojoins.split(',');
 				for (var j = 0; j < autojoins.length; j++) {
-					user.tryJoinRoom(autojoins[i], connection);
+					user.tryJoinRoom(autojoins[j], connection);
 				}
 				connection.autojoins = '';
 			}
@@ -1019,8 +1022,11 @@ var BattleRoom = (function () {
 		}
 
 		if (inactiveSide < 0) {
-			if (ticksLeft[0]) inactiveSide = 1;
-			else if (ticksLeft[1]) inactiveSide = 0;
+			if (ticksLeft[0]) {
+				inactiveSide = 1;
+			} else if (ticksLeft[1]) {
+				inactiveSide = 0;
+			}
 		}
 
 		this.forfeit(this.battle.getPlayer(inactiveSide), ' lost due to inactivity.', inactiveSide);
