@@ -15,6 +15,7 @@ exports.BattleAliases = {
 	"createapokemon": "CAP",
 	"cc1v1": "Challenge Cup 1v1",
 	"bh": "Balanced Hackmons",
+	"hc": "Hackmons Cup",
 	"aaa": "Almost Any Ability",
 	"monorandom": "Monotype Random Battle",
 
@@ -251,6 +252,7 @@ exports.BattleAliases = {
 	"aegi": "Aegislash",
 	"aegiblade": "Aegislash-Blade",
 	"aegis": "Aegislash",
+	"aero": "Aerodactyl",
 	"bliss": "Blissey",
 	"chomp": "Garchomp",
 	"cofag": "Cofagrigus",
@@ -266,12 +268,14 @@ exports.BattleAliases = {
 	"forry": "Forretress",
 	"gar": "Gengar",
 	"garde": "Gardevoir",
+	"gatr": "Feraligatr",
 	"hera": "Heracross",
 	"hippo": "Hippowdon",
 	"honch": "Honchkrow",
 	"keld": "Keldeo",
 	"klef": "Klefki",
 	"kou": "Raikou",
+	"krook": "Krookodile",
 	"kyub": "Kyurem-Black",
 	"kyuw": "Kyurem-White",
 	"lando": "Landorus",
@@ -310,6 +314,7 @@ exports.BattleAliases = {
 	"ohmagod":"Plasmanta",
 
 	// moves
+	"bb": "Brave Bird",
 	"bpass": "Baton Pass",
 	"bp": "Baton Pass",
 	"cc": "Close Combat",

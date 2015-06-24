@@ -95,6 +95,17 @@ var commands = exports.commands = {
 	whoishelp: ["/whois - Get details on yourself: alts, group, IP address, and rooms.",
 		"/whois [username] - Get details on a username: alts (Requires: % @ & ~), group, IP address (Requires: @ & ~), and rooms."],
 
+	host: function (target, room, user, connection, cmd) {
+		if (!target) return this.parse('/help host');
+		if (!this.can('rangeban')) return;
+		if (!/[0-9.]+/.test(target)) return this.sendReply('You must pass a valid IPv4 IP to /host.');
+		var self = this;
+		Dnsbl.reverse(target, function (err, hosts) {
+			self.sendReply('IP ' + target + ': ' + (hosts ? hosts[0] : 'NULL'));
+		});
+	},
+	hosthelp: ["/host [ip] - Gets the host for a given IP. Requires: & ~"],
+
 	ipsearchall: 'ipsearch',
 	hostsearch: 'ipsearch',
 	ipsearch: function (target, room, user, connection, cmd) {
@@ -145,6 +156,7 @@ var commands = exports.commands = {
 
 	inv: 'invite',
 	invite: function (target, room, user) {
+		if (!target) return this.parse('/help invite');
 		target = this.splitTarget(target);
 		if (!this.targetUser) {
 			return this.sendReply("User " + this.targetUsername + " not found.");
@@ -314,7 +326,8 @@ var commands = exports.commands = {
 		"!data [pokemon/item/move/ability] - Show everyone these details. Requires: + % @ # & ~"],
 
 	dt: 'details',
-	details: function () {
+	details: function (target) {
+		if (!target) return this.parse('/help details');
 		CommandParser.commands.data.apply(this, arguments);
 	},
 	detailshelp: ["/details [pokemon] - Get additional details on this pokemon/item/move/ability/nature.",
@@ -1209,7 +1222,10 @@ var commands = exports.commands = {
 			factor = Math.pow(2, totalTypeMod);
 		}
 
-		this.sendReplyBox("" + atkName + " is " + factor + "x effective against " + defName + ".");
+		var hasThousandArrows = source.id === 'thousandarrows' && defender.types.indexOf('Flying') >= 0;
+		var additionalInfo = hasThousandArrows ? "<br>However, Thousand Arrows will be 1x effective on the first hit." : "";
+
+		this.sendReplyBox("" + atkName + " is " + factor + "x effective against " + defName + "." + additionalInfo);
 	},
 	effectivenesshelp: ["/effectiveness [attack], [defender] - Provides the effectiveness of a move or type on another type or a Pok\u00e9mon.",
 		"!effectiveness [attack], [defender] - Shows everyone the effectiveness of a move or type on another type or a Pok\u00e9mon."],
@@ -1224,6 +1240,8 @@ var commands = exports.commands = {
 
 		var dispTable = false;
 		var bestCoverage = {};
+		var hasThousandArrows = false;
+
 		for (var type in Tools.data.TypeChart) {
 			// This command uses -5 to designate immunity
 			bestCoverage[type] = -5;
@@ -1250,6 +1268,7 @@ var commands = exports.commands = {
 			move = Tools.getMove(move);
 			if (move.exists) {
 				if (!move.basePower && !move.basePowerCallback) continue;
+				if (move.id === 'thousandarrows') hasThousandArrows = true;
 				sources.push(move);
 				for (var type in bestCoverage) {
 					if (!Tools.getImmunity(move.type, type) && !move.ignoreImmunity) continue;
@@ -1374,6 +1393,10 @@ var commands = exports.commands = {
 			}
 			buffer += '</table></div>';
 
+			if (hasThousandArrows) {
+				buffer += "<br><b>Thousand Arrows has neutral type effectiveness on Flying-type Pokemon if not already smacked down.";
+			}
+
 			this.sendReplyBox('Coverage for ' + sources.join(' + ') + ':<br>' + buffer);
 		}
 	},
@@ -1466,11 +1489,9 @@ var commands = exports.commands = {
 	smogintro: function (target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReplyBox(
-			"Welcome to Smogon's official simulator! Here are some useful links to <a href=\"https://www.smogon.com/mentorship/\">Smogon\'s Mentorship Program</a> to help you get integrated into the community:<br />" +
-			"- <a href=\"https://www.smogon.com/mentorship/primer\">Smogon Primer: A brief introduction to Smogon's subcommunities</a><br />" +
-			"- <a href=\"https://www.smogon.com/mentorship/introductions\">Introduce yourself to Smogon!</a><br />" +
-			"- <a href=\"https://www.smogon.com/mentorship/profiles\">Profiles of current Smogon Mentors</a><br />" +
-			"- <a href=\"http://mibbit.com/#mentor@irc.synirc.net\">#mentor: the Smogon Mentorship IRC channel</a>"
+			"Welcome to Smogon's official simulator! The <a href=\"https://www.smogon.com/forums/forums/264\">Smogon Info / Intro Hub</a> can help you get integrated into the community.<br />" +
+			"- <a href=\"https://www.smogon.com/forums/threads/3526346\">Useful Smogon Info</a><br />" +
+			"- <a href=\"https://www.smogon.com/forums/threads/3498332\">Tiering FAQ</a><br />"
 		);
 	},
 
@@ -1491,9 +1512,9 @@ var commands = exports.commands = {
 		this.sendReplyBox(
 			"An introduction to the Create-A-Pok&eacute;mon project:<br />" +
 			"- <a href=\"https://www.smogon.com/cap/\">CAP project website and description</a><br />" +
-			"- <a href=\"https://www.smogon.com/forums/showthread.php?t=48782\">What Pok&eacute;mon have been made?</a><br />" +
+			"- <a href=\"https://www.smogon.com/forums/threads/48782/\">What Pok&eacute;mon have been made?</a><br />" +
 			"- <a href=\"https://www.smogon.com/forums/forums/311\">Talk about the metagame here</a><br />" +
-			"- <a href=\"https://www.smogon.com/forums/threads/3512318/#post-5594694\">Sample XY CAP teams</a>"
+			"- <a href=\"https://www.smogon.com/forums/threads/3512318/\">Sample XY CAP teams</a>"
 		);
 	},
 	caphelp: ["/cap - Provides an introduction to the Create-A-Pok&eacute;mon project.",
@@ -1542,8 +1563,9 @@ var commands = exports.commands = {
 		}
 		if (target === 'all' || target === 'omofthemonth' || target === 'omotm' || target === 'month') {
 			matched = true;
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3481155/\">Other Metagame of the Month</a><br />";
-			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3524254/\">Current OMotM: Linked</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3541792/\">Other Metagame of the Month</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3524254/\">Linked</a><br />";
+			buffer += "- <a href=\"https://www.smogon.com/forums/threads/3526481/\">Averagemons</a><br />";
 		}
 		if (target === 'all' || target === 'seasonal') {
 			matched = true;
@@ -1772,7 +1794,7 @@ var commands = exports.commands = {
 			matched = true;
 			buffer += "<a href=\"https://www.smogon.com/sim/faq#customavatar\">How can I get a custom avatar?</a><br />";
 		}
-		if (target === 'all' || target === 'pm') {
+		if (target === 'all' || target === 'pm' || target === 'msg' || target === 'w') {
 			matched = true;
 			buffer += "<a href=\"https://www.smogon.com/sim/faq#pm\">How can I send a user a private message?</a><br />";
 		}
