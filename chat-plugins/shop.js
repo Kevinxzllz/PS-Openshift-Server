@@ -269,48 +269,61 @@ exports.commands = {
 			return this.sendReply("El usuario no tenía ningún permiso que quitar.");
 		}
 	},
-
+	
+	hideauth: 'customsymbol',
 	symbol: 'customsymbol',
 	simbolo: 'customsymbol',
-	customsymbol: function (target, room, user) {
+	customsymbol: function (target, room, user, connection, cmd) {
 		if (!user.can('customsymbol') && !Shop.symbolPermision(user.name)) return  this.sendReply('Debes comprar este comando en la tienda para usarlo.');
+		if (!target && cmd === 'hideauth') target = ' ';
 		if (!target || target.length > 1) return this.sendReply('Debes especificar un caracter como simbolo.');
+		if (target.match(/[A-Za-z0-9\d]+/g)) return this.sendReply('Tu simbolo no puede ser un caracter alfanumerico.');
 		if (!user.can('customsymbol')) {
-			if (target.match(/[A-Za-z\d]+/g) || '?!+\u2605%@\u2295&~#'.indexOf(target) >= 0) return this.sendReply('Lo sentimos, pero no puedes cambiar el símbolo al que has escogido por razones de seguridad/estabilidad.');
+			if ('?!$+\u2605%@\u2295&~#'.indexOf(target) >= 0) return this.sendReply('No tienes permiso para elegir un rango como simbolo');
 		}
 		user.getIdentity = function (roomid) {
-			var name = this.name;
 			if (this.locked) {
-				return '‽' + name;
+				return '‽' + this.name;
 			}
-			if (roomid && this.mutedRooms[roomid]) {
-				return '!' + name;
+			if (roomid) {
+				var room = Rooms.rooms[roomid];
+				if (room.isMuted(this)) {
+					return '!' + this.name;
+				}
+				if (room && room.auth) {
+					if (room.auth[this.userid]) {
+						return room.auth[this.userid] + this.name;
+					}
+					if (room.isPrivate === true) return ' ' + this.name;
+				}
 			}
-			return target + name;
+			return target + this.name;
 		};
 		user.updateIdentity();
 		user.hasCustomSymbol = true;
+		this.sendReply('Tu simbolo ha cambiado a "' + target + '"');
 	},
-
+	
+	showauth: 'resetsymbol',
 	resetsymbol: function (target, room, user) {
 		if (!user.hasCustomSymbol) return this.sendReply('No tienes nigún simbolo personalizado.');
 		user.getIdentity = function (roomid) {
-			if (!roomid) roomid = 'lobby';
-			var name = this.name;
 			if (this.locked) {
-				return '‽' + name;
+				return '‽' + this.name;
 			}
-			if (this.mutedRooms[roomid]) {
-				return '!' + name;
-			}
-			var room = Rooms.rooms[roomid];
-			if (room.auth) {
-				if (room.auth[this.userid]) {
-					return room.auth[this.userid] + name;
+			if (roomid) {
+				var room = Rooms.rooms[roomid];
+				if (room.isMuted(this)) {
+					return '!' + this.name;
 				}
-			if (room.isPrivate) return ' ' + name;
+				if (room && room.auth) {
+					if (room.auth[this.userid]) {
+						return room.auth[this.userid] + this.name;
+					}
+					if (room.isPrivate === true) return ' ' + this.name;
+				}
 			}
-			return this.group + name;
+			return this.group + this.name;
 		};
 		user.hasCustomSymbol = false;
 		user.updateIdentity();

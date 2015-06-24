@@ -817,7 +817,6 @@
 	},
 	
 	kickall: function (target, room, user, connection) {
-		if (user.locked || user.mutedRooms[room.id]) return this.sendReply("You cannot do this while unable to talk.");
 		if (!this.can('makeroom')) return false;
 		var targetUser;
 		for (var f in room.users) {

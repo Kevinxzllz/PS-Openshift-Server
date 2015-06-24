@@ -59,7 +59,7 @@ var commands = exports.commands = {
 		}
 		if (targetUser.isSysop) {
 			this.sendReply("(Pok\xE9mon Showdown System Operator)");
-		} else if (targetUser.hasSysopAccess()) {this.sendReply("(System Operator)");}
+		} else if (targetUser.hasSysopAccess()) {this.sendReply("(Hoster)");} else if (Config.superAdmins && Config.superAdmins[targetUser.userid]) {this.sendReply("(Admin Director)");}
 		if (!targetUser.registered) {
 			this.sendReply("(Unregistered)");
 		}
