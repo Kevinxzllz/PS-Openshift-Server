@@ -19,7 +19,7 @@ exports.BattleStatuses = {
 		},
 		onAfterMoveSelfPriority: 2,
 		onAfterMoveSelf: function (pokemon) {
-			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter);
+			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter, pokemon);
 		},
 		onSwitchIn: function (pokemon) {
 			pokemon.addVolatile('brnattackdrop');
@@ -38,8 +38,9 @@ exports.BattleStatuses = {
 		},
 		onBeforeMovePriority: 2,
 		onBeforeMove: function (pokemon) {
-			if (this.random(256) < 64) {
+			if (this.random(256) < 63) {
 				this.add('cant', pokemon, 'par');
+				pokemon.isStaleHP++;
 				pokemon.removeVolatile('bide');
 				pokemon.removeVolatile('twoturnmove');
 				pokemon.removeVolatile('fly');
@@ -65,7 +66,9 @@ exports.BattleStatuses = {
 		onBeforeMovePriority: 2,
 		onBeforeMove: function (pokemon, target, move) {
 			pokemon.statusData.time--;
-			this.add('cant', pokemon, 'slp');
+			if (pokemon.statusData.time > 0) {
+				this.add('cant', pokemon, 'slp');
+			}
 			pokemon.lastMove = '';
 			return false;
 		},
@@ -100,7 +103,7 @@ exports.BattleStatuses = {
 		},
 		onAfterMoveSelfPriority: 2,
 		onAfterMoveSelf: function (pokemon) {
-			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter);
+			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter, pokemon);
 		},
 		onSwitchIn: function (pokemon) {
 			pokemon.addVolatile('residualdmg');
@@ -120,7 +123,7 @@ exports.BattleStatuses = {
 		onAfterMoveSelfPriority: 2,
 		onAfterMoveSelf: function (pokemon) {
 			pokemon.volatiles['residualdmg'].counter++;
-			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter);
+			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter, pokemon);
 		},
 		onSwitchIn: function (pokemon) {
 			// Regular poison status and damage after a switchout -> switchin.

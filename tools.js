@@ -16,7 +16,7 @@ var fs = require('fs');
 module.exports = (function () {
 	var moddedTools = {};
 
-	var dataTypes = ['FormatsData', 'Learnsets', 'Pokedex', 'Movedex', 'Statuses', 'TypeChart', 'Scripts', 'Items', 'Abilities', 'Formats', 'Aliases'];
+	var dataTypes = ['FormatsData', 'Learnsets', 'Pokedex', 'Movedex', 'Statuses', 'TypeChart', 'Scripts', 'Items', 'Abilities', 'Natures', 'Formats', 'Aliases'];
 	var dataFiles = {
 		'Pokedex': 'pokedex.js',
 		'Movedex': 'moves.js',
@@ -30,6 +30,45 @@ module.exports = (function () {
 		'Learnsets': 'learnsets.js',
 		'Aliases': 'aliases.js'
 	};
+
+	var BattleNatures = dataFiles.Natures = {
+		adamant: {name:"Adamant", plus:'atk', minus:'spa'},
+		bashful: {name:"Bashful"},
+		bold: {name:"Bold", plus:'def', minus:'atk'},
+		brave: {name:"Brave", plus:'atk', minus:'spe'},
+		calm: {name:"Calm", plus:'spd', minus:'atk'},
+		careful: {name:"Careful", plus:'spd', minus:'spa'},
+		docile: {name:"Docile"},
+		gentle: {name:"Gentle", plus:'spd', minus:'def'},
+		hardy: {name:"Hardy"},
+		hasty: {name:"Hasty", plus:'spe', minus:'def'},
+		impish: {name:"Impish", plus:'def', minus:'spa'},
+		jolly: {name:"Jolly", plus:'spe', minus:'spa'},
+		lax: {name:"Lax", plus:'def', minus:'spd'},
+		lonely: {name:"Lonely", plus:'atk', minus:'def'},
+		mild: {name:"Mild", plus:'spa', minus:'def'},
+		modest: {name:"Modest", plus:'spa', minus:'atk'},
+		naive: {name:"Naive", plus:'spe', minus:'spd'},
+		naughty: {name:"Naughty", plus:'atk', minus:'spd'},
+		quiet: {name:"Quiet", plus:'spa', minus:'spe'},
+		quirky: {name:"Quirky"},
+		rash: {name:"Rash", plus:'spa', minus:'spd'},
+		relaxed: {name:"Relaxed", plus:'def', minus:'spe'},
+		sassy: {name:"Sassy", plus:'spd', minus:'spe'},
+		serious: {name:"Serious"},
+		timid: {name:"Timid", plus:'spe', minus:'atk'}
+	};
+
+	function tryRequire(filePath) {
+		try {
+			var ret = require(filePath);
+			if (!ret || typeof ret !== 'object') return new TypeError("" + filePath + " must export an object except `null`, or it should be removed");
+			return ret;
+		} catch (e) {
+			return e;
+		}
+	}
+
 	function Tools(mod, parentMod) {
 		if (!mod) {
 			mod = 'base';
@@ -44,36 +83,47 @@ module.exports = (function () {
 		};
 		if (mod === 'base') {
 			dataTypes.forEach(function (dataType) {
-				try {
-					var path = './data/' + dataFiles[dataType];
-					data[dataType] = require(path)['Battle' + dataType];
-				} catch (e) {
-					if (e.code !== 'MODULE_NOT_FOUND') console.error('CRASH LOADING DATA: ' + e.stack);
+				if (typeof dataFiles[dataType] !== 'string') return (data[dataType] = dataFiles[dataType]);
+				var maybeData = tryRequire('./data/' + dataFiles[dataType]);
+				if (maybeData instanceof Error) {
+					if (maybeData.code !== 'MODULE_NOT_FOUND') throw new Error("CRASH LOADING " + data.mod.toUpperCase() + " DATA:\n" + maybeData.stack);
+					maybeData['Battle' + dataType] = {}; // Fall back to an empty object
 				}
-				if (!data[dataType]) data[dataType] = {};
+				var BattleData = maybeData['Battle' + dataType];
+				if (!BattleData || typeof BattleData !== 'object') throw new TypeError("Exported property `Battle" + dataType + "`from `" + './data/' + dataFiles[dataType] + "` must be an object except `null`.");
+				data[dataType] = BattleData;
 			}, this);
-			try {
-				var path = './config/formats.js';
-				var configFormats = require(path).Formats;
-				for (var i = 0; i < configFormats.length; i++) {
-					var format = configFormats[i];
-					var id = toId(format.name);
-					format.effectType = 'Format';
-					if (format.challengeShow === undefined) format.challengeShow = true;
-					if (format.searchShow === undefined) format.searchShow = true;
-					data.Formats[id] = format;
-				}
-			} catch (e) {
-				if (e.code !== 'MODULE_NOT_FOUND') console.error('CRASH LOADING FORMATS: ' + e.stack);
+
+			var maybeFormats = tryRequire('./config/formats.js');
+			if (maybeFormats instanceof Error) {
+				if (maybeFormats.code !== 'MODULE_NOT_FOUND') throw new Error("CRASH LOADING FORMATS:" + maybeFormats.stack);
+				maybeFormats.Formats = []; // Fall back to an empty formats list
+			}
+			var BattleFormats = maybeFormats.Formats;
+			if (!Array.isArray(BattleFormats)) throw new TypeError("Exported property `Formats` from `" + './config/formats.js' + "` must be an array`.");
+			for (var i = 0; i < BattleFormats.length; i++) {
+				var format = BattleFormats[i];
+				var id = toId(format.name);
+				if (!id) throw new RangeError("Format #" + (i + 1) + " must have a name with alphanumeric characters");
+				if (data.Formats[id]) throw new Error("Format #" + (i + 1) + " has a duplicate ID: `" + id + "`");
+				format.effectType = 'Format';
+				if (format.challengeShow === undefined) format.challengeShow = true;
+				if (format.searchShow === undefined) format.searchShow = true;
+				if (format.tournamentShow === undefined) format.tournamentShow = true;
+				data.Formats[id] = format;
 			}
 		} else {
 			var parentData = moddedTools[parentMod].data;
 			dataTypes.forEach(function (dataType) {
-				try {
-					var path = './mods/' + mod + '/' + dataFiles[dataType];
-					data[dataType] = require(path)['Battle' + dataType];
-				} catch (e) {
-					if (e.code !== 'MODULE_NOT_FOUND') console.error('CRASH LOADING MOD DATA: ' + e.stack);
+				if (typeof dataFiles[dataType] === 'string') {
+					var maybeData = tryRequire('./mods/' + mod + '/' + dataFiles[dataType]);
+					if (maybeData instanceof Error) {
+						if (maybeData.code !== 'MODULE_NOT_FOUND') throw new Error("CRASH LOADING " + data.mod.toUpperCase() + " DATA:\n" + maybeData.stack);
+						maybeData['Battle' + dataType] = {}; // Fallback to an empty object
+					}
+					var BattleData = maybeData['Battle' + dataType];
+					if (!BattleData || typeof BattleData !== 'object') throw new TypeError("Exported property `Battle" + dataType + "` from `" + './mods/' + mod + '/' + dataFiles[dataType] + "` must be an object except `null`.");
+					data[dataType] = BattleData;
 				}
 				if (!data[dataType]) data[dataType] = {};
 				for (var i in parentData[dataType]) {
@@ -97,33 +147,6 @@ module.exports = (function () {
 				}
 			});
 		}
-		data['Natures'] = {
-			adamant: {name:"Adamant", plus:'atk', minus:'spa'},
-			bashful: {name:"Bashful"},
-			bold: {name:"Bold", plus:'def', minus:'atk'},
-			brave: {name:"Brave", plus:'atk', minus:'spe'},
-			calm: {name:"Calm", plus:'spd', minus:'atk'},
-			careful: {name:"Careful", plus:'spd', minus:'spa'},
-			docile: {name:"Docile"},
-			gentle: {name:"Gentle", plus:'spd', minus:'def'},
-			hardy: {name:"Hardy"},
-			hasty: {name:"Hasty", plus:'spe', minus:'def'},
-			impish: {name:"Impish", plus:'def', minus:'spa'},
-			jolly: {name:"Jolly", plus:'spe', minus:'spa'},
-			lax: {name:"Lax", plus:'def', minus:'spd'},
-			lonely: {name:"Lonely", plus:'atk', minus:'def'},
-			mild: {name:"Mild", plus:'spa', minus:'def'},
-			modest: {name:"Modest", plus:'spa', minus:'atk'},
-			naive: {name:"Naive", plus:'spe', minus:'spd'},
-			naughty: {name:"Naughty", plus:'atk', minus:'spd'},
-			quiet: {name:"Quiet", plus:'spa', minus:'spe'},
-			quirky: {name:"Quirky"},
-			rash: {name:"Rash", plus:'spa', minus:'spd'},
-			relaxed: {name:"Relaxed", plus:'def', minus:'spe'},
-			sassy: {name:"Sassy", plus:'spd', minus:'spe'},
-			serious: {name:"Serious"},
-			timid: {name:"Timid", plus:'spe', minus:'atk'}
-		};
 	}
 	Tools.loadMods = function () {
 		if (Tools.modsLoaded) return;
@@ -142,11 +165,8 @@ module.exports = (function () {
 			try {
 				parentMods[mod] = require('./mods/' + mod + '/scripts.js').BattleScripts.inherit || 'base';
 			} catch (e) {
-				if (e.code === 'MODULE_NOT_FOUND') {
-					parentMods[mod] = 'base';
-				} else {
-					console.error("Error while loading mods: " + e.stack);
-				}
+				if (e.code !== 'MODULE_NOT_FOUND') return console.error("Error while loading mods: " + e.stack);
+				parentMods[mod] = 'base';
 			}
 		});
 
@@ -162,7 +182,7 @@ module.exports = (function () {
 				}
 			} while (didSomething);
 		} catch (e) {
-			console.error("Error while loading mods: " + (e.stack || e));
+			require('./crashlogger.js')(e, "Mods loader");
 		}
 		Tools.modsLoaded = true;
 	};
@@ -221,6 +241,46 @@ module.exports = (function () {
 		default: return 0;
 		}
 	};
+
+	/**
+	 * Safely ensures the passed variable is a string
+	 * Simply doing '' + str can crash if str.toString crashes or isn't a function
+	 * If we're expecting a string and being given anything that isn't a string
+	 * or a number, it's safe to assume it's an error, and return ''
+	 */
+
+	Tools.prototype.getString = function (str) {
+		if (typeof str === 'string' || typeof str === 'number') return '' + str;
+		return '';
+	};
+
+	/**
+	 * Sanitizes a username or Pokemon nickname
+	 *
+	 * Returns the passed name, sanitized for safe use as a name in the PS
+	 * protocol.
+	 *
+	 * Such a string must uphold these guarantees:
+	 * - must not contain any ASCII whitespace character other than a space
+	 * - must not start or end with a space character
+	 * - must not contain any of: | , [ ]
+	 * - must not be the empty string
+	 *
+	 * If no such string can be found, returns the empty string. Calling
+	 * functions are expected to check for that condition and deal with it
+	 * accordingly.
+	 *
+	 * getName also enforces that there are not multiple space characters
+	 * in the name, although this is not strictly necessary for safety.
+	 */
+
+	Tools.prototype.getName = function (name) {
+		if (typeof name !== 'string' && typeof name !== 'number') return '';
+		name = ('' + name).replace(/[\|\s\[\]\,]+/g, ' ').trim();
+		if (name.length > 18) name = name.substr(0, 18).trim();
+		return name;
+	};
+
 	Tools.prototype.getTemplate = function (template) {
 		if (!template || typeof template === 'string') {
 			var name = (template || '').trim();
@@ -376,7 +436,7 @@ module.exports = (function () {
 			} else if (id && this.data.Formats[id]) {
 				effect = this.data.Formats[id];
 				effect.name = effect.name || this.data.Formats[id].name;
-				if (!effect.mod) effect.mod = this.currentMod;
+				if (!effect.mod) effect.mod = 'base';
 				if (!effect.effectType) effect.effectType = 'Format';
 			} else if (id === 'recoil') {
 				effect = {
@@ -410,7 +470,7 @@ module.exports = (function () {
 				if (effect.cached) return effect;
 				effect.cached = true;
 				effect.name = effect.name || this.data.Formats[id].name;
-				if (!effect.mod) effect.mod = this.currentMod;
+				if (!effect.mod) effect.mod = 'base';
 				if (!effect.effectType) effect.effectType = 'Format';
 			}
 			if (!effect.id) effect.id = id;
@@ -950,10 +1010,9 @@ module.exports = (function () {
 	};
 
 	Tools.construct = function (mod, parentMod) {
-		var tools = new Tools(mod, parentMod);
 		// Scripts override Tools.
-		var ret = Object.create(tools);
-		tools.install(ret);
+		var ret = new Tools(mod, parentMod);
+		ret.install(ret);
 		if (ret.init) {
 			if (parentMod && ret.init === moddedTools[parentMod].data.Scripts.init) {
 				// don't inherit init
