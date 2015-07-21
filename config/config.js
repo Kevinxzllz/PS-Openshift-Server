@@ -311,12 +311,20 @@ exports.grouplist = [
 		joinbattle: true
 	},
 	{
+		symbol: '\u00A5',
+		id: "youtuber",
+		name: "Youtuber",
+		inherit: '\u2295',
+		warn: true,
+		kick: true
+	},
+	{
 		symbol: '\u2295',
 		id: "operator",
 		name: "Operator",
 		inherit: '+',
 		tournamentsmoderation: true,
-		tournaments: true,
+		tournaments: true
 	},
 	{
 		symbol: '+',
