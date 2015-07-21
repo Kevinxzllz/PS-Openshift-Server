@@ -960,19 +960,6 @@ exports.Formats = [
 		}
 	},
 	{
-		name: "Protean Palace",
-		section: "Local Metagames",
-		ruleset: ['Pokemon', 'Standard', 'Team Preview'],
-		banlist: ['Uber', 'Soul Dew', 'Gengarite', 'Kangaskhanite', 'Lucarionite', 'Mawilite'],
-		onPrepareHit: function (source, target, move) {
-			var type = move.type;
-			if (type && type !== '???' && source.getTypes().join() !== type) {
-				if (!source.setType(type)) return;
-				this.add('-start', source, 'typechange', type, '[from] Protean');
-			}
-		}
-	},
-	{
 		name: "Same Type Stealth Rock",
 		section: "Local Metagames",
 		mod: 'stsr',

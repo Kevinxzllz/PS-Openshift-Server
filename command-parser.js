@@ -58,7 +58,7 @@ var modlog = exports.modlog = {lobby: fs.createWriteStream(LOGS_DIR + 'modlog/mo
 
 var writeModlog = exports.writeModlog = function (roomid, text) {
 	if (!modlog[roomid]) {
-		modlog[roomid] = fs.createWriteStream(LOGS_DIR + 'modlog/modlog_' + roomid + '.txt'), {flags:'a+'});
+		modlog[roomid] = fs.createWriteStream(LOGS_DIR + 'modlog/modlog_' + roomid + '.txt', {flags:'a+'});
 	}
 	modlog[roomid].write('[' + (new Date().toJSON()) + '] ' + text + '\n');
 };

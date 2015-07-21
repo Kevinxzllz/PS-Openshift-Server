@@ -1,6 +1,6 @@
 
 exports.commands = {
-	stafflist: 'authlist',
+	/*stafflist: 'authlist',
 	authlist: function (target, room, user, connection) {
 		var rankLists = {};
 		for (var u in Users.usergroups) {
@@ -22,7 +22,7 @@ exports.commands = {
 			return connection.popup("This server has no auth.");
 		}
 		connection.popup(buffer.join("\n\n"));
-	},
+	},*/
 	
 	postimage: 'image',
 	image: function (target, room, user) {
