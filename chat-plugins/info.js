@@ -37,6 +37,11 @@ var commands = exports.commands = {
 		if (targetUser.isSysop) {
 			buf += "<br />(Pok&eacute;mon Showdown System Operator)";
 		}
+		if (global.SuperRanks) {
+			if (SuperRanks.isHoster(targetUser.userid)) buf += "<br />(Hoster)";
+			else if (SuperRanks.isOwner(targetUser.userid)) buf += "<br />(Owner)";
+			else if (SuperRanks.isAdmin(targetUser.userid)) buf += "<br />(Admin Director)";
+		}
 		if (!targetUser.registered) {
 			buf += "<br />(Unregistered)";
 		}
@@ -96,15 +101,6 @@ var commands = exports.commands = {
 			if (targetUser.semilocked) {
 				buf += '<br />Semilocked: ' + targetUser.semilocked;
 			}
-		}
-		if (Config.groups[targetUser.group] && Config.groups[targetUser.group].name) {
-			this.sendReply("Group: " + Config.groups[targetUser.group].name + " (" + targetUser.group + ")");
-		}
-		if (targetUser.isSysop) {
-			this.sendReply("(Pok\xE9mon Showdown System Operator)");
-		} else if (targetUser.hasSysopAccess()) {this.sendReply("(Hoster)");} else if (Config.superAdmins && Config.superAdmins[targetUser.userid]) {this.sendReply("(Admin Director)");}
-		if (!targetUser.registered) {
-			this.sendReply("(Unregistered)");
 		}
 		if ((user.can('ip', targetUser) || user === targetUser)) {
 			var ips = Object.keys(targetUser.ips);
