@@ -315,6 +315,8 @@ exports.grouplist = [
 		id: "youtuber",
 		name: "Youtuber",
 		inherit: '\u2295',
+		jurisdiction: 'u',
+		youtube: true,
 		warn: true,
 		kick: true
 	},
