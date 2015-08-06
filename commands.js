@@ -60,7 +60,7 @@ var commands = exports.commands = {
 			buffer.push((Config.groups[r] ? Config.groups[r].name + "s (" + r + ")" : r) + ":\n" + nickList.join(", "));
 		});
 
-		if (!buffer.length) buffer = "This server has no auth.";
+		if (!buffer.length) buffer = "This server has no global authority.";
 		connection.popup(buffer.join("\n\n"));
 	},
 
@@ -84,7 +84,10 @@ var commands = exports.commands = {
 		if (!target) return this.parse('/avatars');
 		var parts = target.split(',');
 		var avatar = parseInt(parts[0]);
-		if (!avatar || avatar > 294 || avatar < 1) {
+		if (parts[0] === '#bw2elesa') {
+			avatar = parts[0];
+		}
+		if (typeof avatar === 'number' && (!avatar || avatar > 294 || avatar < 1)) {
 			if (!parts[1]) {
 				this.sendReply("Invalid avatar.");
 			}
@@ -94,7 +97,7 @@ var commands = exports.commands = {
 		user.avatar = avatar;
 		if (!parts[1]) {
 			this.sendReply("Avatar changed to:\n" +
-				'|raw|<img src="//play.pokemonshowdown.com/sprites/trainers/' + avatar + '.png" alt="" width="80" height="80" />');
+				'|raw|<img src="//play.pokemonshowdown.com/sprites/trainers/' + (typeof avatar === 'string' ? avatar.substr(1) : avatar) + '.png" alt="" width="80" height="80" />');
 		}
 	},
 	avatarhelp: ["/avatar [avatar number 1 to 293] - Change your trainer sprite."],
@@ -265,7 +268,8 @@ var commands = exports.commands = {
 
 		var id = toId(target);
 		if (!id) return this.parse('/help makechatroom');
-		if (Rooms.rooms[id]) return this.sendReply("The room '" + target + "' already exists.");
+		// Check if the name already exists as a room or alias
+		if (Rooms.rooms[id] || Rooms.get(id) || Rooms.aliases[id]) return this.sendReply("The room '" + target + "' already exists.");
 		if (Rooms.global.addChatRoom(target)) {
 			if (cmd === 'makeprivatechatroom') {
 				var targetRoom = Rooms.search(target);

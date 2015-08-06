@@ -111,9 +111,11 @@ function ipSearch(ip, table) {
 	return false;
 }
 function checkBanned(ip) {
+	if (!ip) return false;
 	return ipSearch(ip, bannedIps);
 }
 function checkLocked(ip) {
+	if (!ip) return false;
 	return ipSearch(ip, lockedIps);
 }
 Users.checkBanned = checkBanned;
@@ -422,7 +424,7 @@ function cacheGroupData() {
 	var groups = Config.groups;
 	var cachedGroups = {};
 
-	function cacheGroup (sym, groupData) {
+	function cacheGroup(sym, groupData) {
 		if (cachedGroups[sym] === 'processing') return false; // cyclic inheritance.
 
 		if (cachedGroups[sym] !== true && groupData['inherit']) {
@@ -891,7 +893,7 @@ User = (function () {
 			} else if (userType === '4') {
 				this.autoconfirmed = userid;
 			} else if (userType === '5') {
-				this.lock(false, userid);
+				this.lock(false, userid + '#permalock');
 			} else if (userType === '6') {
 				this.ban(false, userid);
 			}
@@ -920,14 +922,14 @@ User = (function () {
 			if (this.named) user.prevNames[this.userid] = this.name;
 			this.destroy();
 			Rooms.global.checkAutojoin(user);
-			if (Config.loginfilter) Config.loginfilter(user, this);
+			if (Config.loginfilter) Config.loginfilter(user, this, userType);
 			return true;
 		}
 
 		// rename success
 		if (this.forceRename(name, registered)) {
 			Rooms.global.checkAutojoin(this);
-			if (Config.loginfilter) Config.loginfilter(this);
+			if (Config.loginfilter) Config.loginfilter(this, null, userType);
 			return true;
 		}
 		return false;
@@ -1443,6 +1445,9 @@ User = (function () {
 							room.onLeave(this);
 							delete this.roomCount[room.id];
 						}
+					} else {
+						// should never happen
+						console.log('!! room miscount');
 					}
 					if (!this.connections[i]) {
 						// race condition? This should never happen, but it does.
@@ -1461,6 +1466,8 @@ User = (function () {
 			}
 		}
 		if (!connection && this.roomCount[room.id]) {
+			// should also never happen
+			console.log('!! room miscount: ' + room.id + ' not left for ' + this.userid);
 			room.onLeave(this);
 			delete this.roomCount[room.id];
 		}

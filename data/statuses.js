@@ -19,16 +19,15 @@ exports.BattleStatuses = {
 		onStart: function (target) {
 			this.add('-status', target, 'par');
 		},
-		onModifySpe: function (speMod, pokemon) {
+		onModifySpe: function (spe, pokemon) {
 			if (!pokemon.hasAbility('quickfeet')) {
-				return this.chain(speMod, 0.25);
+				return this.chainModify(0.25);
 			}
 		},
 		onBeforeMovePriority: 1,
 		onBeforeMove: function (pokemon) {
 			if (this.random(4) === 0) {
 				this.add('cant', pokemon, 'par');
-				pokemon.isStaleHP++;
 				return false;
 			}
 		}
