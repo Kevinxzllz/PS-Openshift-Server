@@ -979,16 +979,24 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomMonoType',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Random Inverse Battle",
 		section: "Random Metagames",
-		mod: 'inverse',
 
 		searchShow: false,
 		team: 'random',
-		ruleset: ['Pokemon', 'HP Percentage Mod', 'Sleep Clause Mod']
+		ruleset: ['Pokemon', 'HP Percentage Mod', 'Sleep Clause Mod', 'Cancel Mod'],
+		onNegateImmunity: function (pokemon, type) {
+			if (type in this.data.TypeChart && this.runEvent('Immunity', pokemon, null, null, type)) return false;
+		},
+		onEffectiveness: function (typeMod, target, type, move) {
+			// The effectiveness of Freeze Dry on Water isn't reverted
+			if (move && move.id === 'freezedry' && type === 'Water') return;
+			if (move && !this.getImmunity(move, type)) return 1;
+			return -typeMod;
+		}
 	},
 	{
 		name: "Random Haxmons",
@@ -996,7 +1004,7 @@ exports.Formats = [
 
 		searchShow: false,
 		team: 'random',
-		ruleset: ['Pokemon', 'HP Percentage Mod', 'Sleep Clause Mod', 'Freeze Clause'],
+		ruleset: ['Pokemon', 'HP Percentage Mod', 'Sleep Clause Mod', 'Freeze Clause', 'Cancel Mod'],
 		onModifyMovePriority: -100,
 		onModifyMove: function (move) {
 			if (move.accuracy !== true && move.accuracy < 100) move.accuracy = 0;
@@ -1015,7 +1023,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomSky',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Random Ubers",
@@ -1024,7 +1032,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomUber',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Random LC",
@@ -1033,7 +1041,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomLC',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Random CAP",
@@ -1042,7 +1050,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomCap',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Random MonoGen",
@@ -1051,7 +1059,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomMonoGen',
-		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod']
+		ruleset: ['PotD', 'Pokemon', 'Sleep Clause Mod', 'HP Percentage Mod', 'Cancel Mod']
 	},
 	{
 		name: "Challenge Cup 2-vs-2",
@@ -1061,7 +1069,7 @@ exports.Formats = [
 		gameType: 'doubles',
 		team: 'randomCC',
 		searchShow: true,
-		ruleset: ['Pokemon', 'Team Preview 2v2', 'HP Percentage Mod'],
+		ruleset: ['Pokemon', 'Team Preview 2v2', 'HP Percentage Mod', 'Cancel Mod'],
 		onBegin: function () {
 			this.debug('Cutting down to 2');
 			this.p1.pokemon = this.p1.pokemon.slice(0, 2);
@@ -1077,7 +1085,7 @@ exports.Formats = [
 
 		searchShow: true,
 		team: 'randomMetro',
-		ruleset: ['Pokemon', 'HP Percentage Mod']
+		ruleset: ['Pokemon', 'HP Percentage Mod', 'Cancel Mod']
 	},
 
 	// Local Metagames
@@ -1088,7 +1096,7 @@ exports.Formats = [
 		section: 'Local Metagames',
 		column: 3,
 
-		ruleset: ['Pokemon', 'Standard', 'Swagger Clause'],
+		ruleset: ['Pokemon', 'Standard', 'Swagger Clause', 'Cancel Mod'],
 		banlist: ['Arceus', 'Blaziken', 'Darkrai', 'Deoxys', 'Deoxys-Attack', 'Dialga', 'Giratina', 'Giratina-Origin', 'Groudon', 'Ho-Oh',
 			'Kyogre', 'Kyurem-White', 'Lugia', 'Mewtwo', 'Palkia', 'Rayquaza', 'Reshiram', 'Shaymin-Sky', 'Xerneas', 'Yveltal',
 			'Zekrom', 'Focus Sash', 'Kangaskhanite', 'Soul Dew'
@@ -1110,7 +1118,7 @@ exports.Formats = [
 		name: "Metagamiate",
 		section: "Local Metagames",
 
-		ruleset: ['Pokemon', 'Standard', 'Baton Pass Clause', 'Swagger Clause', 'Team Preview'],
+		ruleset: ['Pokemon', 'Standard', 'Baton Pass Clause', 'Swagger Clause', 'Team Preview', 'Cancel Mod'],
 		banlist: ['Gengarite', 'Kangaskhanite', 'Lucarionite', 'Soul Dew',
 			'Arceus', 'Blaziken', 'Darkrai', 'Deoxys', 'Deoxys-Attack', 'Deoxys-Defense', 'Deoxys-Speed', 'Dialga', 'Genesect', 'Giratina',
 			'Giratina-Origin', 'Groudon', 'Kyogre', 'Ho-Oh', 'Kyurem-White', 'Lugia', 'Mewtwo', 'Palkia', 'Rayquaza', 'Reshiram',
@@ -1140,7 +1148,7 @@ exports.Formats = [
 		name: "Startermons",
 		section: 'Local Metagames',
 
-		ruleset: ['Pokemon', 'Standard', 'Team Preview', 'Swagger Clause', 'Baton Pass Clause'],
+		ruleset: ['Pokemon', 'Standard', 'Team Preview', 'Swagger Clause', 'Baton Pass Clause', 'Cancel Mod'],
 		banlist: ['Soul Dew', 'Charizardite X', 'Charizardite Y', 'Venusaurite', 'Blastoisinite', 'Blazikenite', 'Blaziken + Speed Boost'],
 		validateSet: function (set) {
 			var validStarters = {

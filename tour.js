@@ -20,6 +20,7 @@ exports.tour = function(t) {
 							return;
 						}
 						Rooms.rooms[i].addRaw("<i>El torneo comenzara en " + difference + " segundo" + (difference == 1 ? '' : 's') + ".</i>");
+						Rooms.rooms[i].update();
 					}
 					if (fraction == 0.25 || fraction == 0.5 || fraction == 0.75) sendIt();
 					if (fraction >= 1) {
@@ -264,6 +265,7 @@ exports.tour = function(t) {
 				}
 			}
 			room.addRaw(html + "</table><hr />");
+			room.update();
 		},
 		nextRound: function(rid) {
 			var w = tour[rid].winners;
@@ -287,6 +289,7 @@ exports.tour = function(t) {
 					Rooms.rooms[rid].addRaw(tour.username(l[0]) + ' ha recibido ' + moneySecond + ' pd por quedar segundo!');
 				}
 				tour[rid].status = 0;
+				Rooms.rooms[rid].update();
 			} else {
 				var html = '<hr /><h3><font color="green">Ronda '+ tour[rid].roundNum +'!</font></h3><font color="blue"><b>FORMATO:</b></font> ' + Tools.data.Formats[tour[rid].tier].name + "<hr /><center> <small><font color=red>Rojo</font> = descalificado, <font color=\"green\">Green</font> = paso a la siguiente ronda, <a class='ilink'><b>URL</b></a> = combatiendo</small>";
 				var pBye = new Array();
@@ -324,6 +327,7 @@ exports.tour = function(t) {
 					html += tabla + "<tr><td align=right>" + clean(p1n) + "</td><td>&nbsp;VS&nbsp;</td><td>" + clean(p2n) + "</td></tr>";
 				}
 				Rooms.rooms[rid].addRaw(html + "</table><hr />");
+				Rooms.rooms[rid].update();
 			}
 			tour[rid].battlesended = [];
 		},
@@ -995,12 +999,12 @@ for (var i in cmds) CommandParser.commands[i] = cmds[i];
  * Events
  *********************************************************/
 if (!Rooms.global._startBattle) Rooms.global._startBattle = Rooms.global.startBattle;
-Rooms.global.startBattle = function(p1, p2, format, rated, p1team, p2team) {
-	var newRoom = this._startBattle(p1, p2, format, rated, p1team, p2team);
+Rooms.global.startBattle = function(p1, p2, format, p1team, p2team, options) {
+	var newRoom = this._startBattle(p1, p2, format, p1team, p2team, options);
 	if (!newRoom) return;
 	var formaturlid = format.toLowerCase().replace(/[^a-z0-9]+/g, '');
 	//tour
-	if (!rated) {
+	if (!options.rated) {
 		var name1 = p1.name;
 		var name2 = p2.name;
 		for (var i in tour) {
@@ -1014,6 +1018,7 @@ Rooms.global.startBattle = function(p1, p2, format, rated, p1team, p2team) {
 								c.battles[x] = newRoom.id;
 								c.round[x][2] = -1;
 								Rooms.rooms[i].addRaw("<a href=\"/" + c.battles[x] + "\" class=\"ilink\"><b>La batalla de torneo entre " + p1.name + " y " + p2.name + " ha comenzado.</b></a>");
+								Rooms.rooms[i].update();
 							}
 						}
 					}
@@ -1049,10 +1054,12 @@ Rooms.BattleRoom.prototype.win = function(winner) {
 							if (istie) {
 								c.round[x][2] = undefined;
 								Rooms.rooms[i].addRaw("La batalla entre " + '<b>' + tour.username(this.p1.name) + '</b>' + " y " + '<b>' + tour.username(this.p2.name) + '</b>' + " termino en un " + '<b>' + "empate." + '</b>' + " Por favor inicien otra batalla.");
+								Rooms.rooms[i].update();
 								tour[i].battlesinvtie.push(this.id);
 							} else {
 								tour.lose(loserid, i);
 								Rooms.rooms[i].addRaw('<b>' + tour.username(winnerid) + '</b> ha ganado su batalla contra ' + tour.username(loserid) + '.</b>');
+								Rooms.rooms[i].update();
 								var r = tour[i].round;
 								var cc = 0;
 								for (var y in r) {
