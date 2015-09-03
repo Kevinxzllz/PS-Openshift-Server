@@ -878,7 +878,7 @@ exports.BattleAbilities = {
 			}
 			if (!warnMoves.length) return;
 			var warnMove = warnMoves[this.random(warnMoves.length)];
-			this.add('-activate', pokemon, 'ability: Forewarn', '[from] ' + warnMove[0], '[of] ' + warnMove[1]);
+			this.add('-activate', pokemon, 'ability: Forewarn', warnMove[0], '[of] ' + warnMove[1]);
 		},
 		id: "forewarn",
 		name: "Forewarn",
@@ -1651,8 +1651,7 @@ exports.BattleAbilities = {
 			if (source && source !== target && move && move.flags['contact']) {
 				var oldAbility = source.setAbility('mummy', source, 'mummy', true);
 				if (oldAbility) {
-					this.add('-endability', source, oldAbility, '[from] Mummy');
-					this.add('-ability', source, 'Mummy', '[from] Mummy');
+					this.add('-activate', target, 'ability: Mummy', oldAbility, '[of] ' + source);
 				}
 			}
 		},
@@ -2269,6 +2268,7 @@ exports.BattleAbilities = {
 	},
 	"serenegrace": {
 		shortDesc: "This Pokemon's moves have their secondary effect chance doubled.",
+		onModifyMovePriority: -2,
 		onModifyMove: function (move) {
 			if (move.secondaries && move.id !== 'secretpower') {
 				this.debug('doubling secondary chance');
@@ -2350,9 +2350,11 @@ exports.BattleAbilities = {
 	},
 	"shielddust": {
 		shortDesc: "This Pokemon is not affected by the secondary effect of another Pokemon's attack.",
-		onTrySecondaryHit: function () {
+		onModifySecondaries: function (secondaries) {
 			this.debug('Shield Dust prevent secondary');
-			return null;
+			return secondaries.filter(function (effect) {
+				return !!effect.self;
+			});
 		},
 		id: "shielddust",
 		name: "Shield Dust",
@@ -3170,25 +3172,27 @@ exports.BattleAbilities = {
 				pokemon.removeVolatile('zenmode');
 			}
 		},
+		onEnd: function (pokemon) {
+			if (!pokemon.volatiles['zenmode'] || !pokemon.hp) return;
+			pokemon.transformed = false;
+			delete pokemon.volatiles['zenmode'];
+			if (pokemon.formeChange('Darmanitan')) {
+				this.add('-formechange', pokemon, 'Darmanitan', '[silent]');
+			}
+		},
 		effect: {
 			onStart: function (pokemon) {
 				if (pokemon.formeChange('Darmanitan-Zen')) {
-					this.add('-formechange', pokemon, 'Darmanitan-Zen');
+					this.add('-formechange', pokemon, 'Darmanitan-Zen', '[from] ability: Zen Mode');
 				} else {
 					return false;
 				}
 			},
 			onEnd: function (pokemon) {
 				if (pokemon.formeChange('Darmanitan')) {
-					this.add('-formechange', pokemon, 'Darmanitan');
+					this.add('-formechange', pokemon, 'Darmanitan', '[from] ability: Zen Mode');
 				} else {
 					return false;
-				}
-			},
-			onUpdate: function (pokemon) {
-				if (!pokemon.hasAbility('zenmode')) {
-					pokemon.transformed = false;
-					pokemon.removeVolatile('zenmode');
 				}
 			}
 		},

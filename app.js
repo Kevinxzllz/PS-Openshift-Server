@@ -145,7 +145,13 @@ global.ResourceMonitor = {
 	log: function (text) {
 		console.log(text);
 		if (Rooms.get('staff')) {
-			Rooms.get('staff').add('||' + text).update();
+			Rooms.get('staff').add('|c|~|' + text).update();
+		}
+	},
+	adminlog: function (text) {
+		console.log(text);
+		if (Rooms.get('upperstaff')) {
+			Rooms.get('upperstaff').add('|c|~|' + text).update();
 		}
 	},
 	logHTML: function (text) {
@@ -160,18 +166,14 @@ global.ResourceMonitor = {
 		name = (name ? ': ' + name : '');
 		if (ip in this.connections && duration < 30 * 60 * 1000) {
 			this.connections[ip]++;
-			if (this.connections[ip] < 500 && duration < 5 * 60 * 1000 && this.connections[ip] % 60 === 0) {
-				this.log('[ResourceMonitor] IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
-			} else if (this.connections[ip] < 500 && this.connections[ip] % 120 === 0) {
-				this.log('[ResourceMonitor] IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
-			} else if (this.connections[ip] === 500) {
-				this.log('[ResourceMonitor] IP ' + ip + ' has been banned for connection flooding (' + this.connections[ip] + ' times in the last ' + duration.duration() + name + ')');
+			if (this.connections[ip] === 500) {
+				this.adminlog('[ResourceMonitor] IP ' + ip + ' has been banned for connection flooding (' + this.connections[ip] + ' times in the last ' + duration.duration() + name + ')');
 				return true;
 			} else if (this.connections[ip] > 500) {
 				if (this.connections[ip] % 500 === 0) {
 					var c = this.connections[ip] / 500;
 					if (c < 5 || c % 2 === 0 && c < 10 || c % 5 === 0) {
-						this.log('[ResourceMonitor] Banned IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
+						this.adminlog('[ResourceMonitor] Banned IP ' + ip + ' has connected ' + this.connections[ip] + ' times in the last ' + duration.duration() + name);
 					}
 				}
 				return true;
@@ -321,11 +323,19 @@ global.toId = function (text) {
 	return ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
 };
 
+global.Tools = require('./tools.js').includeFormats();
+
 global.LoginServer = require('./loginserver.js');
+
+global.Ladders = require('./ladders-remote.js');
 
 global.Users = require('./users.js');
 
 global.Rooms = require('./rooms.js');
+
+// Generate and cache the format list.
+Rooms.global.formatListText = Rooms.global.getFormatListText();
+
 
 delete process.send; // in case we're a child process
 global.Verifier = require('./verifier.js');
@@ -372,15 +382,6 @@ global.Sockets = require('./sockets.js');
 /*********************************************************
  * Set up our last global
  *********************************************************/
-
-// This slow operation is done *after* we start listening for connections
-// to the server. Anybody who connects while this require() is running will
-// have to wait a couple seconds before they are able to join the server, but
-// at least they probably won't receive a connection error message.
-global.Tools = require('./tools.js');
-
-// After loading tools, generate and cache the format list.
-Rooms.global.formatListText = Rooms.global.getFormatListText();
 
 global.TeamValidator = require('./team-validator.js');
 

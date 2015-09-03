@@ -128,7 +128,7 @@ if (!process.send) {
 		return ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
 	};
 
-	global.Tools = require('./tools.js');
+	global.Tools = require('./tools.js').includeMods();
 
 	//require('./repl.js').start('team-validator-', process.pid, function (cmd) { return eval(cmd); });
 
@@ -185,6 +185,12 @@ Validator = (function () {
 	}
 
 	Validator.prototype.validateTeam = function (team) {
+		var format = Tools.getFormat(this.format);
+		if (format.validateTeam) return format.validateTeam.call(this, team);
+		return this.baseValidateTeam(team);
+	};
+
+	Validator.prototype.baseValidateTeam = function (team) {
 		var format = this.format;
 		var tools = this.tools;
 
@@ -218,7 +224,7 @@ Validator = (function () {
 		var teamHas = {};
 		for (var i = 0; i < team.length; i++) {
 			if (!team[i]) return ["You sent invalid team data. If you're not using a custom client, please report this as a bug."];
-			var setProblems = this.validateSet(team[i], teamHas);
+			var setProblems = (format.validateSet || this.validateSet).call(this, team[i], teamHas);
 			if (setProblems) {
 				problems = problems.concat(setProblems);
 			}
@@ -241,20 +247,20 @@ Validator = (function () {
 		if (format.ruleset) {
 			for (var i = 0; i < format.ruleset.length; i++) {
 				var subformat = tools.getFormat(format.ruleset[i]);
-				if (subformat.validateTeam) {
-					problems = problems.concat(subformat.validateTeam.call(tools, team, format, teamHas) || []);
+				if (subformat.onValidateTeam) {
+					problems = problems.concat(subformat.onValidateTeam.call(tools, team, format, teamHas) || []);
 				}
 			}
 		}
-		if (format.validateTeam) {
-			problems = problems.concat(format.validateTeam.call(tools, team, format, teamHas) || []);
+		if (format.onValidateTeam) {
+			problems = problems.concat(format.onValidateTeam.call(tools, team, format, teamHas) || []);
 		}
 
 		if (!problems.length) return false;
 		return problems;
 	};
 
-	Validator.prototype.validateSet = function (set, teamHas) {
+	Validator.prototype.validateSet = function (set, teamHas, flags) {
 		var format = this.format;
 		var tools = this.tools;
 
@@ -298,6 +304,7 @@ Validator = (function () {
 		if (set.species !== set.name) name = set.name + " (" + set.species + ")";
 		var isHidden = false;
 		var lsetData = {set:set, format:format};
+		if (flags) Object.merge(lsetData, flags);
 
 		var setHas = {};
 
@@ -309,13 +316,13 @@ Validator = (function () {
 		if (format.ruleset) {
 			for (var i = 0; i < format.ruleset.length; i++) {
 				var subformat = tools.getFormat(format.ruleset[i]);
-				if (subformat.changeSet) {
-					problems = problems.concat(subformat.changeSet.call(tools, set, format) || []);
+				if (subformat.onChangeSet) {
+					problems = problems.concat(subformat.onChangeSet.call(tools, set, format) || []);
 				}
 			}
 		}
-		if (format.changeSet) {
-			problems = problems.concat(format.changeSet.call(tools, set, format, setHas, teamHas) || []);
+		if (format.onChangeSet) {
+			problems = problems.concat(format.onChangeSet.call(tools, set, format, setHas, teamHas) || []);
 		}
 		template = tools.getTemplate(set.species);
 		item = tools.getItem(set.item);
@@ -401,6 +408,9 @@ Validator = (function () {
 			// in the cartridge-compliant set validator: rulesets.js:pokemon
 			set.moves = set.moves.slice(0, 24);
 
+			// Sketchmons hack
+			var sketched = false;
+
 			for (var i = 0; i < set.moves.length; i++) {
 				if (!set.moves[i]) continue;
 				var move = tools.getMove(Tools.getString(set.moves[i]));
@@ -419,6 +429,10 @@ Validator = (function () {
 				if (banlistTable['illegal']) {
 					var problem = this.checkLearnset(move, template, lsetData);
 					if (problem) {
+						if (banlistTable['allowonesketch'] && !sketched && move.id !== 'chatter') {
+							sketched = true;
+							continue;
+						}
 						var problemString = name + " can't learn " + move.name;
 						if (problem.type === 'incompatible') {
 							if (isHidden) {
@@ -501,9 +515,16 @@ Validator = (function () {
 				}
 			}
 		}
-		setHas[toId(template.tier)] = true;
-		if (banlistTable[template.tier]) {
-			problems.push(name + " is in " + template.tier + ", which is banned.");
+		if (item.megaEvolves === template.species) {
+			template = tools.getTemplate(item.megaStone);
+		}
+		if (template.tier) {
+			var tier = template.tier;
+			if (tier.charAt(0) === '(') tier = tier.slice(1, -1);
+			setHas[toId(tier)] = true;
+			if (banlistTable[tier]) {
+				problems.push(template.species + " is in " + tier + ", which is banned.");
+			}
 		}
 
 		if (teamHas) {
@@ -528,13 +549,13 @@ Validator = (function () {
 		if (format.ruleset) {
 			for (var i = 0; i < format.ruleset.length; i++) {
 				var subformat = tools.getFormat(format.ruleset[i]);
-				if (subformat.validateSet) {
-					problems = problems.concat(subformat.validateSet.call(tools, set, format, setHas, teamHas) || []);
+				if (subformat.onValidateSet) {
+					problems = problems.concat(subformat.onValidateSet.call(tools, set, format, setHas, teamHas) || []);
 				}
 			}
 		}
-		if (format.validateSet) {
-			problems = problems.concat(format.validateSet.call(tools, set, format, setHas, teamHas) || []);
+		if (format.onValidateSet) {
+			problems = problems.concat(format.onValidateSet.call(tools, set, format, setHas, teamHas) || []);
 		}
 
 		if (!problems.length) {
@@ -593,7 +614,7 @@ Validator = (function () {
 		do {
 			alreadyChecked[template.speciesid] = true;
 			// STABmons hack to avoid copying all of validateSet to formats
-			if (format.banlistTable && format.banlistTable['ignorestabmoves'] && move !== 'chatter') {
+			if (move !== 'chatter' && lsetData['ignorestabmoves'] && lsetData['ignorestabmoves'][this.tools.getMove(move).category]) {
 				var types = template.types;
 				if (template.species === 'Shaymin') types = ['Grass', 'Flying'];
 				if (template.baseSpecies === 'Hoopa') types = ['Psychic', 'Ghost', 'Dark'];

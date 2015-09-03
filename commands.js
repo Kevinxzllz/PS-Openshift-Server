@@ -269,7 +269,7 @@ var commands = exports.commands = {
 		var id = toId(target);
 		if (!id) return this.parse('/help makechatroom');
 		// Check if the name already exists as a room or alias
-		if (Rooms.rooms[id] || Rooms.get(id) || Rooms.aliases[id]) return this.sendReply("The room '" + target + "' already exists.");
+		if (Rooms.search(id)) return this.sendReply("The room '" + target + "' already exists.");
 		if (Rooms.global.addChatRoom(target)) {
 			if (cmd === 'makeprivatechatroom') {
 				var targetRoom = Rooms.search(target);
@@ -303,17 +303,19 @@ var commands = exports.commands = {
 
 	hideroom: 'privateroom',
 	hiddenroom: 'privateroom',
+	secretroom: 'privateroom',
 	privateroom: function (target, room, user, connection, cmd) {
 		var setting;
 		switch (cmd) {
 		case 'privateroom':
+		case 'secretroom':
 			if (!this.can('makeroom')) return;
 			setting = true;
 			break;
 		default:
 			if (!this.can('privateroom', null, room)) return;
-			if (room.isPrivate === true) {
-				return this.sendReply("This room is a secret room. Use /privateroom to toggle instead.");
+			if (room.isPrivate === true && target !== 'force') {
+				return this.sendReply("This room is a secret room. Use /privateroom to toggle, or /hiddenroom force to force hidden.");
 			}
 			setting = 'hidden';
 			break;
@@ -465,12 +467,15 @@ var commands = exports.commands = {
 		if (!alias.length) return this.sendReply("Only alphanumeric characters are valid in an alias.");
 		if (Rooms.get(alias) || Rooms.aliases[alias]) return this.sendReply("You cannot set an alias to an existing room or alias.");
 
+		Rooms.aliases[alias] = room;
 		this.privateModCommand("(" + user.name + " added the room alias '" + target + "'.)");
 
-		if (!room.chatRoomData.aliases) room.chatRoomData.aliases = [];
-		room.chatRoomData.aliases.push(alias);
-		Rooms.aliases[alias] = room;
-		Rooms.global.writeChatRoomData();
+		if (!room.aliases) room.aliases = room.chatRoomData.aliases || [];
+		room.aliases.push(alias);
+		if (room.chatRoomData) {
+			room.chatRoomData.aliases = room.aliases;
+			Rooms.global.writeChatRoomData();
+		}
 	},
 
 	removeroomalias: function (target, room, user) {
@@ -479,13 +484,14 @@ var commands = exports.commands = {
 		if (!this.can('setalias')) return false;
 		var alias = toId(target);
 		if (!alias.length || !Rooms.aliases[alias]) return this.sendReply("Please specify an existing alias.");
-		if (Rooms.aliases[alias] !== room) return this.sendReply("You may only remove an alias from the current room.");
+		if (toId(Rooms.aliases[alias]) !== room.id) return this.sendReply("You may only remove an alias from the current room.");
 
 		this.privateModCommand("(" + user.name + " removed the room alias '" + target + "'.)");
 
-		var aliasIndex = room.chatRoomData.aliases.indexOf(alias);
+		var aliases = room.aliases || room.chatRoomData.aliases;
+		var aliasIndex = aliases.indexOf(alias);
 		if (aliasIndex >= 0) {
-			room.chatRoomData.aliases.splice(aliasIndex, 1);
+			aliases.splice(aliasIndex, 1);
 			delete Rooms.aliases[alias];
 			Rooms.global.writeChatRoomData();
 		}
@@ -1029,11 +1035,10 @@ var commands = exports.commands = {
 	unbanall: function (target, room, user) {
 		if (!this.can('rangeban')) return false;
 		// we have to do this the hard way since it's no longer a global
-		for (var i in Users.bannedIps) {
-			delete Users.bannedIps[i];
-		}
-		for (var i in Users.lockedIps) {
-			delete Users.lockedIps[i];
+		var punishKeys = ['bannedIps', 'bannedUsers', 'lockedIps', 'lockedUsers', 'lockedRanges', 'rangeLockedUsers'];
+		for (var i = 0; i < punishKeys.length; i++) {
+			var dict = Users[punishKeys[i]];
+			for (var entry in dict) delete dict[entry];
 		}
 		this.addModCommand("All bans and locks have been lifted by " + user.name + ".");
 	},
@@ -1438,6 +1443,7 @@ var commands = exports.commands = {
 			try {
 				CommandParser.uncacheTree('./command-parser.js');
 				delete require.cache[require.resolve('./commands.js')];
+				delete require.cache[require.resolve('./chat-plugins/info.js')];
 				global.CommandParser = require('./command-parser.js');
 
 				var runningTournaments = Tournaments.tournaments;
@@ -1464,10 +1470,11 @@ var commands = exports.commands = {
 			return this.sendReply("Battles have been hotpatched. Any battles started after now will use the new code; however, in-progress battles will continue to use the old code.");
 		} else if (target === 'formats') {
 			try {
+				var toolsLoaded = !!Tools.isLoaded;
 				// uncache the tools.js dependency tree
 				CommandParser.uncacheTree('./tools.js');
 				// reload tools.js
-				global.Tools = require('./tools.js'); // note: this will lock up the server for a few seconds
+				global.Tools = require('./tools.js')[toolsLoaded ? 'includeData' : 'includeFormats'](); // note: this will lock up the server for a few seconds
 				// rebuild the formats list
 				Rooms.global.formatListText = Rooms.global.getFormatListText();
 				// respawn validator processes
@@ -1483,10 +1490,11 @@ var commands = exports.commands = {
 			}
 		} else if (target === 'learnsets') {
 			try {
+				var toolsLoaded = !!Tools.isLoaded;
 				// uncache the tools.js dependency tree
 				CommandParser.uncacheTree('./tools.js');
 				// reload tools.js
-				global.Tools = require('./tools.js'); // note: this will lock up the server for a few seconds
+				global.Tools = require('./tools.js')[toolsLoaded ? 'includeData' : 'includeFormats'](); // note: this will lock up the server for a few seconds
 
 				return this.sendReply("Learnsets have been hotpatched.");
 			} catch (e) {
@@ -1497,7 +1505,7 @@ var commands = exports.commands = {
 	},
 	hotpatchhelp: ["Hot-patching the game engine allows you to update parts of Showdown without interrupting currently-running battles. Requires: ~",
 		"Hot-patching has greater memory requirements than restarting.",
-		"/hotpatch chat - reload chat-commands.js",
+		"/hotpatch chat - reload commands.js and the chat-plugins",
 		"/hotpatch battles - spawn new simulator processes",
 		"/hotpatch formats - reload the tools.js tree, rebuild and rebroad the formats list, and also spawn new simulator processes"],
 
@@ -2273,7 +2281,7 @@ var commands = exports.commands = {
 			if (user.group !== Config.groupsranking[0]) {
 				this.sendReply("DRIVER COMMANDS: /warn, /mute, /hourmute, /unmute, /alts, /forcerename, /modlog, /modnote, /lock, /unlock, /announce, /redirect");
 				this.sendReply("MODERATOR COMMANDS: /ban, /unban, /ip, /modchat");
-				this.sendReply("LEADER COMMANDS: /declare, /forcetie, /forcewin, /promote, /demote, /banip, /unbanall");
+				this.sendReply("LEADER COMMANDS: /declare, /forcetie, /forcewin, /promote, /demote, /banip, /host, /unbanall");
 			}
 			this.sendReply("For an overview of room commands, use /roomhelp");
 			this.sendReply("For details of a specific command, use something like: /help data");
