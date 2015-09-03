@@ -112,7 +112,7 @@ exports.commands = {
 					room.update();
 					return;
 				}
-				room.add('|c|' + Bot.config.group + Bot.config.name + '|**Juego de Bingo:** Sale el número **' + bingoNumbers[actualValue] + '**');
+				room.add('|c|~|**Juego de Bingo:** Sale el número **' + bingoNumbers[actualValue] + '**');
 				bingoSaidNumbers[bingoNumbers[actualValue]] = 1;
 				++actualValue;
 				room.update();
