@@ -74,12 +74,21 @@ exports.Formats = [
 	{
 		name: "RU",
 		desc: [
-			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3538971/\">np: RU Stage 10</a>",
+			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3549031/\">np: RU Stage 11</a>",
 			"&bullet; <a href=\"https://www.smogon.com/dex/xy/tags/ru/\">RU Banlist</a>",
 			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3538036/\">RU Viability Ranking</a>"
 		],
 		section: "ORAS Singles",
 
+		searchShow: false,
+		ruleset: ['UU'],
+		banlist: ['UU', 'BL2']
+	},
+	{
+		name: "RU (suspect test)",
+		section: "ORAS Singles",
+
+		challengeShow: false,
 		ruleset: ['UU'],
 		banlist: ['UU', 'BL2']
 	},
@@ -104,25 +113,15 @@ exports.Formats = [
 		],
 		section: "ORAS Singles",
 
-		searchShow: false,
 		maxLevel: 5,
 		ruleset: ['Pokemon', 'Standard', 'Team Preview', 'Little Cup'],
 		banlist: ['LC Uber', 'Gligar', 'Misdreavus', 'Scyther', 'Sneasel', 'Tangela', 'Dragon Rage', 'Sonic Boom', 'Swagger']
 	},
 	{
-		name: "LC (suspect test)",
-		desc: ["&bullet; <a href=\"https://www.smogon.com/forums/threads/3547829/\">LC Suspect</a>"],
-		section: "ORAS Singles",
-
-		challengeShow: false,
-		maxLevel: 5,
-		ruleset: ['LC']
-	},
-	{
 		name: "Anything Goes",
 		desc: [
 			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3523229/\">Anything Goes</a>",
-			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3535064/\">Anything Goes Viability Ranking</a>"
+			"&bullet; <a href=\"https://www.smogon.com/forums/threads/3548945/\">Anything Goes Resources</a>"
 		],
 		section: "ORAS Singles",
 
@@ -293,6 +292,31 @@ exports.Formats = [
 		}
 	},
 	{
+		name: "Primal Battle",
+		desc: ["&bullet; <a href=\"https://www.smogon.com/forums/threads/3548886/\">Primal Battle</a>"],
+		section: "ORAS Doubles",
+
+		gameType: 'doubles',
+		maxForcedLevel: 50,
+		ruleset: ['Pokemon', 'Species Clause', 'Nickname Clause', 'Item Clause', 'Team Preview VGC', 'Cancel Mod'],
+		banlist: ['Unreleased', 'Illegal', 'Soul Dew',
+			'Mewtwo', 'Mew', 'Lugia', 'Ho-Oh', 'Celebi', 'Rayquaza', 'Jirachi', 'Deoxys', 'Deoxys-Attack', 'Deoxys-Defense', 'Deoxys-Speed', 'Dialga',
+			'Palkia', 'Giratina', 'Giratina-Origin', 'Phione', 'Manaphy', 'Darkrai', 'Shaymin', 'Shaymin-Sky', 'Arceus', 'Victini', 'Reshiram', 'Zekrom',
+			'Kyurem', 'Kyurem-Black', 'Kyurem-White', 'Keldeo', 'Meloetta', 'Genesect', 'Xerneas', 'Yveltal', 'Zygarde', 'Diancie', 'Hoopa', 'Hoopa-Unbound'
+		],
+		requirePentagon: true,
+		onValidateTeam: function (team, format) {
+			if (team.length < 4) return ['You must bring at least four Pok\u00e9mon.'];
+		},
+		onBegin: function () {
+			this.debug('cutting down to 4');
+			this.p1.pokemon = this.p1.pokemon.slice(0, 4);
+			this.p1.pokemonLeft = this.p1.pokemon.length;
+			this.p2.pokemon = this.p2.pokemon.slice(0, 4);
+			this.p2.pokemonLeft = this.p2.pokemon.length;
+		}
+	},
+	{
 		name: "Doubles Hackmons Cup",
 		section: "ORAS Doubles",
 
@@ -390,7 +414,16 @@ exports.Formats = [
 		column: 2,
 
 		ruleset: ['OU'],
-		banlist: ['Allow One Sketch', 'Gothitelle']
+		banlist: ['Allow One Sketch', "King's Rock", 'Pinsirite', 'Razor Fang', 'Shadow Tag'],
+		onValidateTeam: function (team) {
+			var sketchedMoves = {};
+			for (var i = 0; i < team.length; i++) {
+				var move = team[i].sketchmonsMove;
+				if (!move) continue;
+				if (move in sketchedMoves) return ["You are limited to sketching one of each move by Move Clause.", "(You have sketched " + this.getMove(move).name + " more than once)"];
+				sketchedMoves[move] = (team[i].name || team[i].species);
+			}
+		}
 	},
 	{
 		name: "Hackmons 1v1",
@@ -1211,7 +1244,7 @@ exports.Formats = [
 		column: 4,
 
 		mod: 'gen5',
-		ruleset: ['Pokemon', 'Standard', 'Evasion Abilities Clause', 'Team Preview'],
+		ruleset: ['Pokemon', 'Standard', 'Evasion Abilities Clause', 'Baton Pass Clause', 'Team Preview'],
 		banlist: ['Uber', 'Drizzle ++ Swift Swim', 'Drought ++ Chlorophyll', 'Sand Stream ++ Sand Rush', 'Soul Dew']
 	},
 	{
