@@ -56,19 +56,17 @@ function createTournament(room, format, generator, playerCap, isRated, args, out
 	}
 	return (exports.tournaments[room.id] = new Tournament(room, format, createTournamentGenerator(generator, args, output), playerCap, isRated));
 }
-function deleteTournament(name, output) {
-	var id = toId(name);
+function deleteTournament(id, output) {
 	var tournament = exports.tournaments[id];
 	if (!tournament) {
-		output.sendReply(name + " doesn't exist.");
+		output.sendReply(id + " doesn't exist.");
 		return false;
 	}
 	tournament.forceEnd(output);
 	delete exports.tournaments[id];
 	return true;
 }
-function getTournament(name, output) {
-	var id = toId(name);
+function getTournament(id, output) {
 	if (exports.tournaments[id]) {
 		return exports.tournaments[id];
 	}
@@ -83,7 +81,7 @@ Tournament = (function () {
 		this.playerCap = parseInt(playerCap) || Config.tournamentDefaultPlayerCap || 0;
 		this.scouting = true;
 		if (Config.tournamentDefaultPlayerCap && this.playerCap > Config.tournamentDefaultPlayerCap) {
-			ResourceMonitor.log('[ResourceMonitor] Room ' + room.id + ' starting a tour over default cap (' + this.playerCap + ')');
+			Monitor.log('[TourMonitor] Room ' + room.id + ' starting a tour over default cap (' + this.playerCap + ')');
 		}
 
 		this.isBracketInvalidated = true;
@@ -741,7 +739,7 @@ Tournament = (function () {
 			bracketData: this.getBracketData()
 		}));  if (global.Shop) {var data = {results: this.generator.getResults().map(usersToNames), bracketData: this.getBracketData()};data = data['results'].toString();var runnerUp = false;var winner = false; if (data.indexOf(',') >= 0) {data = data.split(','); winner = data[0]; if (this.room.id === 'casino' && Users.get(Bot.config.name)) CommandParser.parse('/endtourbets ' + winner, this.room, Users.get(Bot.config.name), Users.get(Bot.config.name).connections[0]); if (data[1]) runnerUp = data[1];} else {winner = data;} var tourSize = this.generator.users.size;if (this.room.isOfficial && tourSize >= 3) {firstMoney = tourSize * 20;secondMoney = Math.floor((tourSize * 20) / 2); firstBuck = 'PokeDolar';secondBuck = 'PokeDolar'; if (firstMoney > 1) firstBuck = 'PokeDolares'; if (secondMoney > 1) secondBuck = 'PokeDolares'; Shop.giveMoney(winner, firstMoney); this.room.add('|raw|<strong>' + Tools.escapeHTML(winner) + '</strong> ha ganado ' + firstMoney + ' ' + firstBuck + ' por ganar el torneo!'); if (runnerUp) { Shop.giveMoney(runnerUp, secondMoney); this.room.add('|raw|<strong>' + Tools.escapeHTML(runnerUp) + '</strong> también ha ganado ' + secondMoney + ' ' + secondBuck + ' por quedar en segundo lugar!');}}}
 		this.isEnded = true; 
-		delete exports.tournaments[toId(this.room.id)];
+		delete exports.tournaments[this.room.id];
 	};
 
 	return Tournament;
@@ -778,7 +776,7 @@ var commands = {
 			}
 			var targetUser = Users.get(params[0]);
 			if (!targetUser) {
-				return this.sendReply("User " + params[0] + " not found.");
+				return this.errorReply("User " + params[0] + " not found.");
 			}
 			tournament.challenge(user, targetUser, this);
 		},
@@ -800,7 +798,7 @@ var commands = {
 				if (playerCap && playerCap >= 2) {
 					tournament.playerCap = playerCap;
 					if (Config.tournamentDefaultPlayerCap && tournament.playerCap > Config.tournamentDefaultPlayerCap) {
-						ResourceMonitor.log('[ResourceMonitor] Room ' + tournament.room.id + ' starting a tour over default cap (' + tournament.playerCap + ')');
+						Monitor.log('[TourMonitor] Room ' + tournament.room.id + ' starting a tour over default cap (' + tournament.playerCap + ')');
 					}
 				}
 				this.sendReply("Tournament set to " + generator.name + (playerCap ? " with a player cap of " + tournament.playerCap : "") + ".");
@@ -821,12 +819,12 @@ var commands = {
 			}
 			var targetUser = Users.get(params[0]);
 			if (!targetUser) {
-				return this.sendReply("User " + params[0] + " not found.");
+				return this.errorReply("User " + params[0] + " not found.");
 			}
 			var reason = '';
 			if (params[1]) {
 				reason = params[1].trim();
-				if (reason.length > MAX_REASON_LENGTH) return this.sendReply("The reason is too long. It cannot exceed " + MAX_REASON_LENGTH + " characters.");
+				if (reason.length > MAX_REASON_LENGTH) return this.errorReply("The reason is too long. It cannot exceed " + MAX_REASON_LENGTH + " characters.");
 			}
 			if (tournament.disqualifyUser(targetUser, this, reason)) {
 				this.privateModCommand("(" + targetUser.name + " was disqualified from the tournament by " + user.name + (reason ? " (" + reason + ")" : "") + ")");
@@ -885,7 +883,7 @@ var commands = {
 		end: 'delete',
 		stop: 'delete',
 		delete: function (tournament, user) {
-			if (deleteTournament(tournament.room.title, this)) {
+			if (deleteTournament(tournament.room.id, this)) {
 				this.privateModCommand("(" + user.name + " forcibly ended a tournament.)");
 			}
 		}
@@ -905,7 +903,7 @@ CommandParser.commands.tournament = function (paramString, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReply('|tournaments|info|' + JSON.stringify(Object.keys(exports.tournaments).filter(function (tournament) {
 			tournament = exports.tournaments[tournament];
-			return !tournament.room.isPrivate && !tournament.room.staffRoom;
+			return !tournament.room.isPrivate && !tournament.room.isPersonal && !tournament.room.staffRoom;
 		}).map(function (tournament) {
 			tournament = exports.tournaments[tournament];
 			return {room: tournament.room.title, format: tournament.format, generator: tournament.generator.name, isStarted: tournament.isTournamentStarted};
@@ -955,7 +953,7 @@ CommandParser.commands.tournament = function (paramString, room, user) {
 			}
 		}
 	} else {
-		var tournament = getTournament(room.title);
+		var tournament = getTournament(room.id);
 		if (!tournament) {
 			return this.sendReply("There is currently no tournament running in this room.");
 		}

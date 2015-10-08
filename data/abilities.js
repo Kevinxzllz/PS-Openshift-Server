@@ -588,7 +588,7 @@ exports.BattleAbilities = {
 		},
 		id: "drizzle",
 		name: "Drizzle",
-		rating: 4,
+		rating: 4.5,
 		num: 2
 	},
 	"drought": {
@@ -598,7 +598,7 @@ exports.BattleAbilities = {
 		},
 		id: "drought",
 		name: "Drought",
-		rating: 4,
+		rating: 4.5,
 		num: 70
 	},
 	"dryskin": {
@@ -1175,7 +1175,7 @@ exports.BattleAbilities = {
 		onStart: function (pokemon) {
 			var target = pokemon.side.foe.active[pokemon.side.foe.active.length - 1 - pokemon.position];
 			if (target) {
-				pokemon.transformInto(target, pokemon);
+				pokemon.transformInto(target, pokemon, this.getAbility('imposter'));
 			}
 		},
 		id: "imposter",
@@ -2208,7 +2208,7 @@ exports.BattleAbilities = {
 		},
 		id: "sandstream",
 		name: "Sand Stream",
-		rating: 4,
+		rating: 4.5,
 		num: 45
 	},
 	"sandveil": {
@@ -2453,7 +2453,7 @@ exports.BattleAbilities = {
 		},
 		id: "snowwarning",
 		name: "Snow Warning",
-		rating: 3.5,
+		rating: 4,
 		num: 117
 	},
 	"solarpower": {

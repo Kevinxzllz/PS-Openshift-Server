@@ -176,7 +176,7 @@ var Context = exports.Context = (function () {
 		if (this.pmTarget) {
 			this.connection.send('|pm|' + this.user.getIdentity() + '|' + (this.pmTarget.getIdentity ? this.pmTarget.getIdentity() : ' ' + this.pmTarget) + '|/error ' + message);
 		} else {
-			this.connection.sendTo(this.room, '|html|<div class="message-error">' + Tools.escapeHTML(message) + '</div>');
+			this.sendReply('|html|<div class="message-error">' + Tools.escapeHTML(message) + '</div>');
 		}
 	};
 	Context.prototype.sendReplyBox = function (html) {
@@ -217,6 +217,7 @@ var Context = exports.Context = (function () {
 	};
 	Context.prototype.logModCommand = function (text) {
 		var roomid = (this.room.battle ? 'battle' : this.room.id);
+		if (this.room.isPersonal) roomid = 'groupchat';
 		writeModlog(roomid, '(' + this.room.id + ') ' + text);
 	};
 	Context.prototype.globalModlog = function (action, user, text) {
@@ -263,11 +264,11 @@ var Context = exports.Context = (function () {
 		}
 		return true;
 	};
-	Context.prototype.parse = function (message, inNamespace) {
+	Context.prototype.parse = function (message, inNamespace, room) {
 		if (inNamespace && this.cmdToken) {
 			message = this.cmdToken + this.namespaces.concat(message.slice(1)).join(" ");
 		}
-		return CommandParser.parse(message, this.room, this.user, this.connection, this.levelsDeep + 1);
+		return CommandParser.parse(message, room || this.room, this.user, this.connection, this.levelsDeep + 1);
 	};
 	Context.prototype.run = function (targetCmd, inNamespace) {
 		var commandHandler;
@@ -312,11 +313,20 @@ var Context = exports.Context = (function () {
 	Context.prototype.canHTML = function (html) {
 		html = '' + (html || '');
 		var images = html.match(/<img\b[^<>]*/ig);
-		if (!images) return true;
-		for (var i = 0; i < images.length; i++) {
-			if (!/width=([0-9]+|"[0-9]+")/i.test(images[i]) || !/height=([0-9]+|"[0-9]+")/i.test(images[i])) {
-				this.errorReply('All images must have a width and height attribute');
+		if (images) {
+			if (this.room.isPersonal && !this.user.can('announce')) {
+				this.errorReply("Images are not allowed in personal rooms.");
 				return false;
+			}
+			for (var i = 0; i < images.length; i++) {
+				if (!/width=([0-9]+|"[0-9]+")/i.test(images[i]) || !/height=([0-9]+|"[0-9]+")/i.test(images[i])) {
+					// Width and height are required because most browsers insert the
+					// <img> element before width and height are known, and when the
+					// image is loaded, this changes the height of the chat area, which
+					// messes up autoscrolling.
+					this.errorReply('All images must have a width and height attribute');
+					return false;
+				}
 			}
 		}
 		if (/>here.?</i.test(html) || /click here/i.test(html)) {
