@@ -906,8 +906,7 @@ var cmds = {
 	},
 		*/
 
-	survey: 'poll',
-	poll: function(target, room, user) {
+	survey: function(target, room, user) {
 		if (!tour.lowauth(user,room)) return this.sendReply('No tienes suficiente poder para utilizar este comando.');
 		if (tour[room.id].question) return this.sendReply('Ya hay una encuesta en curso.');
 		var separacion = "&nbsp;&nbsp;";
@@ -926,11 +925,11 @@ var cmds = {
 		room.addRaw('<div class="infobox"><h2>' + tour[room.id].question + separacion + '<font color="green"><small>Para votar escribe /vote OPCION</small></font></h2><hr />' + pollOptions + '</div>');
 	},
 	
-	tierpoll: function(target, room, user) {
-		this.parse('/poll Formato para el siguiente Torneo, ' + Object.keys(Tools.data.Formats).filter(function (f) {return Tools.data.Formats[f].effectType === 'Format'; }).join(", "));
+	tiersurvey: function(target, room, user) {
+		this.parse('/survey Formato para el siguiente Torneo, ' + Object.keys(Tools.data.Formats).filter(function (f) {return Tools.data.Formats[f].effectType === 'Format'; }).join(", "));
 	},
 
-	vote: function(target, room, user) {
+	votesurvey: function(target, room, user) {
 		var ips = JSON.stringify(user.ips);
 		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso.');
 		if (tour[room.id].answerList.indexOf(target.toLowerCase()) == -1) return this.sendReply('\'' + target + '\' no es una opcion en esta encuesta.');
@@ -938,14 +937,12 @@ var cmds = {
 		return this.sendReply('Tu unico voto ahora es por ' + target + '.');
 	},
 
-	votes: function(target, room, user) {
+	votessurvey: function(target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReply('Votos registrados: ' + Object.keys(tour[room.id].answers).length);
 	},
 
-	endsurvey: 'endpoll',
-	ep: 'endpoll',
-	endpoll: function(target, room, user) {
+	endsurvey: function(target, room, user) {
 		if (!tour.lowauth(user,room)) return this.sendReply('No tienes suficiente poder para utilizar este comando.');
 		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso en esta sala.');
 		var votes = Object.keys(tour[room.id].answers).length;
@@ -981,8 +978,8 @@ var cmds = {
 		}
 	},
 
-	pollremind: 'pr',
-	pr: function(target, room, user) {
+	surveyremind: 'surveyr',
+	surveyr: function(target, room, user) {
 		var separacion = "&nbsp;&nbsp;";
 		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso.');
 		if (!this.canBroadcast()) return;
