@@ -756,7 +756,7 @@ var commands = exports.commands = {
 			room.auth[userid] = nextGroup;
 		}
 
-		if (Config.groups[nextGroup].rank < Config.groups[currentGroup].rank) {
+		if (nextGroup in Config.groups && currentGroup in Config.groups && Config.groups[nextGroup].rank < Config.groups[currentGroup].rank) {
 			this.privateModCommand("(" + name + " was demoted to Room " + groupName + " by " + user.name + ".)");
 			if (targetUser && Rooms.rooms[room.id].users[targetUser.userid]) targetUser.popup("You were demoted to Room " + groupName + " by " + user.name + ".");
 		} else if (nextGroup === '#') {
@@ -1556,7 +1556,7 @@ var commands = exports.commands = {
 			if (this.targetUser) {
 				return this.errorReply("User has already changed their name to '" + this.targetUser.name + "'.");
 			}
-			return this.sendReply("User '" + target + "' not found.");
+			return this.errorReply("User '" + target + "' not found.");
 		}
 		if (!this.can('forcerename', targetUser)) return false;
 
@@ -1585,7 +1585,7 @@ var commands = exports.commands = {
 
 		if (targetUser.locked || Users.checkBanned(targetUser.latestIp)) {
 			hidetype = 'hide|';
-		} else if (room.bannedUsers[toId(name)] && room.bannedIps[targetUser.latestIp]) {
+		} else if ((room.bannedUsers[toId(name)] && room.bannedIps[targetUser.latestIp]) || user.can('rangeban')) {
 			hidetype = 'roomhide|';
 		} else {
 			return this.errorReply("User '" + name + "' is not banned from this room or locked.");
@@ -1595,7 +1595,7 @@ var commands = exports.commands = {
 		this.add('|unlink|' + hidetype + userid);
 		if (userid !== toId(this.inputUsername)) this.add('|unlink|' + hidetype + toId(this.inputUsername));
 	},
-	hidetexthelp: ["/hidetext [username] - Removes a locked or banned user's messages from chat (includes users banned from the room). Requires: % (global only), @ & ~"],
+	hidetexthelp: ["/hidetext [username] - Removes a locked or banned user's messages from chat (includes users banned from the room). Requires: % (global only), @ # & ~"],
 
 	modlog: function (target, room, user, connection) {
 		var lines = 0;
@@ -2500,7 +2500,8 @@ var commands = exports.commands = {
 			for (var i in targetUser.roomCount) {
 				if (i === 'global') continue;
 				var targetRoom = Rooms.get(i);
-				if (!targetRoom || targetRoom.isPrivate) continue;
+				if (!targetRoom) continue; // shouldn't happen
+				if (targetRoom.isPrivate && (!targetRoom.battle || targetRoom.battle.lastPlayers.indexOf(user.userid) < 0)) continue;
 				var roomData = {};
 				if (targetRoom.battle) {
 					var battle = targetRoom.battle;
