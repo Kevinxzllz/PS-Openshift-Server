@@ -65,16 +65,13 @@ exports.commands = {
 	removeaccess: function (target, room, user) {
 		if (!SuperRanks.isHoster(user.userid) && !SuperRanks.isOwner(user.userid)) return this.sendReply('/removeaccess - access denied');
 		if (!target) return this.sendReply('Usage: /removeaccess user');
-		var targetUser = this.targetUser;
-		var userid = toId(this.targetUsername);
-		var name = targetUser ? targetUser.name : this.targetUsername;
-		if (!userid) return this.sendReply('Usage: /removeaccess user');
-		if (!SuperRanks.ranks[userid]) return this.sendReply("User " + name + " does not have access");
+		var userid = toId(target);
+		if (!SuperRanks.ranks[userid]) return this.sendReply("User " + userid + " does not have access");
 		var currentRank = SuperRanks.ranks[userid];
 		if ((currentRank === 'h' || currentRank === 'o') && !SuperRanks.isHoster(user.userid)) return this.sendReply('/removeaccess - access denied');
 		delete SuperRanks.ranks[userid];
 		writeRankData();
-		this.sendReply("User " + name + " removed from excepted users");
+		this.sendReply("User " + userid + " removed from excepted users");
 	},
 	hosters: function (target, room, user, connection) {
 		var ranks = SuperRanks.ranks;

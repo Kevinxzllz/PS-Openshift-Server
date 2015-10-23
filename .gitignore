@@ -54,3 +54,4 @@ config/hpl.json
 config/clans.json
 config/botphrases.json
 config/botbannedwords.json
+*.csv
