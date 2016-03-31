@@ -173,7 +173,7 @@ function canTalk(user, room, connection, message, targetUser) {
 						if (!room && targetUser) {
 							connection.send('|pm|' + user.getIdentity() + '|' + targetUser.getIdentity() + '|' + message);
 							Rooms('staff').add('|c|' + user.getIdentity() + '|(__PM a ' + targetUser.getIdentity() + '__) -- ' + message);
-							Rooms('staf').update();
+							Rooms('staff').update();
 						} else if (room) {
 							connection.sendTo(room, '|c|' + user.getIdentity(room.id) + '|' + message);
 							Rooms('staff').add('|c|' + user.getIdentity(room.id) + '|(__' + room.id + '__) -- ' + message);
