@@ -1,78 +1,9 @@
-/**/body{background-image:url("http://i.imgur.com/KLBN9cZ.jpg")!important}button{background:#003399;color:#fff;border:1px solid #000}button:hover{background:#0033FF;color:#fff;border:1px solid #0096ff}.menugroup button.big{font-size:12pt}.menugroup .button{background:#009}.menugroup .button:hover{background:#006}.ps-room.ps-room-light{background:rgba(0,0,80,0.75);color:#000}.tabbar a.button.cur,.tabbar a.button.cur:hover{color:#FFF;background:#009;border:solid 1px #000}.tabbar a.button{color:#FFF;background:#03C;border:solid 1px #000}.tabbar:hover a.button:hover{color:#FFF;background:#009;border:solid 1px #000}.maintabbarbottom{background:#009}.chat-log{background:rgba(190,240,255,0.85)}.userlist{color:#FFF}#lobby-userlist-users{color:#FFF}.pad{color:#FFF}.tournament-title{color:#FFF}.tournament-wrapper{color:#FFF}.tournament-status{color:#000}.tournament-toggle{color:#000}.teambuilder-results{background:rgba(242,247,250,0.85)}.teamchartbox{background:rgba(242,247,250,0.85)}.userlist li button:hover {background:#0066FF;}
- 
- 
- 
-  #lobby-userlist-user-steelchar, #staff-userlist-user-steelchar, #tournaments-userlist-user-steelchar, #femalehq-userlist-user-steelchar, #shadowbanroom-userlist-user-steelchar {
-                background: rgba(244, 244, 244, 0) url("http://orig06.deviantart.net/f244/f/2015/254/7/c/mega_charizard_x_icon_by_commander_f-d995w87.gif") right no-repeat;
- 
-  }
- 
-  #lobby-userlist-user-pkkraze, #staff-userlist-user-pkkraze, #shadowbanroom-userlist-user-pkkraze, #portugus-userlist-user-pkkraze, #casino-userlist-user-pkkraze {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokecons_action/282.gif") right no-repeat;
- 
-  }
- 
-  #lobby-userlist-user-darkero, #staff-userlist-user-darkero, #shadowbanroom-userlist-user-darkero, #tournaments-userlist-user-darkero, #casino-userlist-user-darkero {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokecons_action/121.gif") right no-repeat;
- 
-  }
- 
-  #lobby-userlist-user-noivernx60, #staff-userlist-user-noivernx60, #shadowbanroom-userlist-user-noivernx60, #noivernsroost-userlist-user-noivernx60 {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokexycons/715.png") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-nerderator, #staff-userlist-user-nerderator, #shadowbanroom-userlist-user-nerderator, #noivernsroost-userlist-user-nerderator, #shadowleague-userlist-user-nerderator {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokecons_action/310.gif") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-thundernyan, #staff-userlist-user-nerderator, #shadowbanroom-userlist-user-thundernyan, #noivernsroost-userlist-user-thundernyan, #thunderleague-userlist-user-thundernyan {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokexycons/595.png") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-drypato8, #fairytail-userlist-user-drypato8, #warrooma-userlist-user-drypato8 {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokexycons/006-mega-y.png") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-senhora, #portugus-userlist-user-senhora {
-        background: rgba(244, 244, 244, 0) url("http://media.pldh.net/pokecons_action/359.gif") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-f4n, #staff-userlist-user-f4n, #eventos-userlist-user-f4n, #warrooma-userlist-user-f4n, #sombraasesina-userlist-user-f4n  {
-        background: rgba(244, 244, 244, 0) url("http://pldh.net/media/pokecons_action/172.gif") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-lumenbot, #staff-userlist-user-lumenbot, #casino-userlist-user-lumenbot, #eventos-userlist-user-lumenbot, #warrooma-userlist-user-lumenbot {
-        background: rgba(244, 244, 244, 0) url("http://pldh.net/media/pokecons_action/385.gif") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-wolfborix, #eventos-userlist-user-wolfborix, #zonaversus-userlist-user-wolfborix, #fairytail-userlist-user-wolfborix, #catal-userlist-user-wolfborix  {
-        background: rgba(244, 244, 244, 0) url("http://pldh.net/media/pokecons_action/448.gif") right no-repeat;
- 
- 
-  }
- 
-  #lobby-userlist-user-frambuesa, #sombraasesina-userlist-user-frambuesa, #casino-userlist-user-frambuesa, #warrooma-userlist-user-frambuesa, #eventos-userlist-user-frambuesa {
-        background: rgba(244, 244, 244, 0) url("http://pldh.net/media/pokecons_action/212.gif") right no-repeat;
- 
- 
- 
-                    }
- 
- 
-.userlist li button:hover {
-        background:rgba(244, 244, 244, 0.3)
+/*
+* Custom.css
+*/
+
+/* -Iconos- */
+
+#lobby-userlist-user-kevinxzllz {
+  background: url("http://www.serebii.net/pokedex-xy/icon/359-m.png") no-repeat right
 }
