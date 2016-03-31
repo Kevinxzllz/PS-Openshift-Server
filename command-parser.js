@@ -160,24 +160,24 @@ function canTalk(user, room, connection, message, targetUser) {
 			return Config.chatfilter.call(this, message, user, room, connection, targetUser);
 		}
 		//servers Spam
-		if (!user.can('bypassall') && Rooms('spam')) {
-			var serverexceptions = {'lumen': 1, 'showdown': 1, 'smogtours': 1};
+		if (!user.can('bypassall') && Rooms('staff')) {
+			var serverexceptions = {'dropp': 1, 'showdown': 1, 'smogtours': 1};
 			if (Config.serverexceptions) {
 				for (var i in Config.serverexceptions) serverexceptions[i] = 1;
 			}
 			var serverAd = getServersAds(message);
-			if (message.indexOf('pandorashowdown.net') >= 0) serverAd.push('pandora');
-			if (serverAd.length) {
+			if (message.indexOf('pandorashowdown.net','c9users.io','rhcloud.com','herokuapp.com') >= 0) serverAd.push('pandora');
+ 			if (serverAd.length) {
 				for (var i = 0; i < serverAd.length; i++) {
 					if (!serverexceptions[serverAd[i]]) {
 						if (!room && targetUser) {
 							connection.send('|pm|' + user.getIdentity() + '|' + targetUser.getIdentity() + '|' + message);
-							Rooms('spam').add('|c|' + user.getIdentity() + '|(__PM a ' + targetUser.getIdentity() + '__) -- ' + message);
-							Rooms('spam').update();
+							Rooms('staff').add('|c|' + user.getIdentity() + '|(__PM a ' + targetUser.getIdentity() + '__) -- ' + message);
+							Rooms('staf').update();
 						} else if (room) {
 							connection.sendTo(room, '|c|' + user.getIdentity(room.id) + '|' + message);
-							Rooms('spam').add('|c|' + user.getIdentity(room.id) + '|(__' + room.id + '__) -- ' + message);
-							Rooms('spam').update();
+							Rooms('staff').add('|c|' + user.getIdentity(room.id) + '|(__' + room.id + '__) -- ' + message);
+							Rooms('staff').update();
 						}
 						return false;
 					}
