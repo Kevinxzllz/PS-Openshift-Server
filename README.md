@@ -8,9 +8,13 @@ Lamentablemente este repositorio **no esta sincronizado al main** y tampoco
 a sido mantenido durante un tiempo, lo cual indica que no tiene plugins
 actuales del main, ni las actualizaciones completas de las tiers.
 
-## Inicio Rapido
+### ¿Que contiene este Servidor?
 
-```bash
-$ npm install --production
-$ node app.js
-```
+Este servidor contiene muchos plugins que podrian ser de tu agrado.
+Entre los muchos plugins que puedes encontrar, destacan:
+
+- Sistema de Clanes, Wars, Team Tours y Ligas
+- Emoticones personalizados
+- Hangman
+
+Entre otros muchos plugins aqui estan los mas basicos.
