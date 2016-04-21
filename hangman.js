@@ -1,5 +1,3 @@
-//Hangman by piiiikachuuu
-//Modified by: The WleDey
 
 exports.hangman = function(h) {
 	if (typeof h != "undefined") var hangman = h; else var hangman = new Object();
