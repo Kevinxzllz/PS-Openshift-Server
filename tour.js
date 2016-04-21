@@ -429,7 +429,6 @@ var cmds = {
 		if (isNaN(targets[1])) return this.sendReply('El comando correcto es: /newtour formato, tamano');
 		if (targets[1] < 3) return this.sendReply('Los torneos deben tener al menos 3 participantes.');
 
-		this.parse('/endpoll');
 		tour.reset(rid);
 		tour[rid].tier = tempTourTier;
 		tour[rid].size = targets[1];
@@ -906,89 +905,6 @@ var cmds = {
 	},
 		*/
 
-	survey: function(target, room, user) {
-		if (!tour.lowauth(user,room)) return this.sendReply('No tienes suficiente poder para utilizar este comando.');
-		if (tour[room.id].question) return this.sendReply('Ya hay una encuesta en curso.');
-		var separacion = "&nbsp;&nbsp;";
-		var answers = tour.splint(target);
-		if (answers.length < 3) return this.sendReply('El comando correcto es /poll pregunta, opcion1, opcion2...');
-		var question = answers[0];
-		answers.splice(0, 1);
-		var answers = answers.join(',').toLowerCase().split(',');
-		tour[room.id].question = question;
-		tour[room.id].answerList = answers;
-		this.logModCommand(user.name + ' ha iniciado la encuesta "' + tour[room.id].question + '"');
-		var pollOptions = '';
-		for (var i = 0; i < tour[room.id].answerList.length; ++i) {
-			pollOptions += '<button name="send" value="/vote ' + tour[room.id].answerList[i] + '">' + tour[room.id].answerList[i] + '</button>' + separacion;
-		}
-		room.addRaw('<div class="infobox"><h2>' + tour[room.id].question + separacion + '<font color="green"><small>Para votar escribe /vote OPCION</small></font></h2><hr />' + pollOptions + '</div>');
-	},
-	
-	tiersurvey: function(target, room, user) {
-		this.parse('/survey Formato para el siguiente Torneo, ' + Object.keys(Tools.data.Formats).filter(function (f) {return Tools.data.Formats[f].effectType === 'Format'; }).join(", "));
-	},
-
-	votesurvey: function(target, room, user) {
-		var ips = JSON.stringify(user.ips);
-		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso.');
-		if (tour[room.id].answerList.indexOf(target.toLowerCase()) == -1) return this.sendReply('\'' + target + '\' no es una opcion en esta encuesta.');
-		tour[room.id].answers[ips] = target.toLowerCase();
-		return this.sendReply('Tu unico voto ahora es por ' + target + '.');
-	},
-
-	votessurvey: function(target, room, user) {
-		if (!this.canBroadcast()) return;
-		this.sendReply('Votos registrados: ' + Object.keys(tour[room.id].answers).length);
-	},
-
-	endsurvey: function(target, room, user) {
-		if (!tour.lowauth(user,room)) return this.sendReply('No tienes suficiente poder para utilizar este comando.');
-		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso en esta sala.');
-		var votes = Object.keys(tour[room.id].answers).length;
-		this.logModCommand(user.name + ' ha cancelado la encuesta.');
-		if (!votes) {
-			tour[room.id].question = undefined;
-			tour[room.id].answerList = new Array();
-			tour[room.id].answers = new Object();
-			return room.addRaw("<h3>La encuesta fue cancelada debido a que nadie ha participado hasta ahora.</h3>");
-		} else {
-			var options = new Object();
-			var obj = tour[room.id];
-			for (var i in obj.answerList) options[obj.answerList[i]] = 0;
-			for (var i in obj.answers) options[obj.answers[i]]++;
-			var sortable = new Array();
-			for (var i in options) sortable.push([i, options[i]]);
-			sortable.sort(function(a, b) {return a[1] - b[1]});
-			var html = "";
-			var topAnswer  = false;
-			for (var i = sortable.length - 1; i > -1; i--) {
-					var option = sortable[i][0];
-					var value = sortable[i][1];
-					if (!topAnswer) topAnswer = option;
-					if (value > 0) {
-						html += "&bull; " + option + " - " + Math.floor(value / votes * 100) + "% (" + value + ")<br />";
-					}
-			}
-			room.addRaw('<div class="infobox"><h2>Resultados de "' + obj.question + '"</h2><hr />' + html + '</div>');
-			tour[room.id].topOption = topAnswer;
-			tour[room.id].question = undefined;
-			tour[room.id].answerList = new Array();
-			tour[room.id].answers = new Object();
-		}
-	},
-
-	surveyremind: 'surveyr',
-	surveyr: function(target, room, user) {
-		var separacion = "&nbsp;&nbsp;";
-		if (!tour[room.id].question) return this.sendReply('No hay encuestas en curso.');
-		if (!this.canBroadcast()) return;
-		var pollOptions = '';
-		for (var i = 0; i < tour[room.id].answerList.length; ++i) {
-			pollOptions += '<button name="send" value="/vote ' + tour[room.id].answerList[i] + '">' + tour[room.id].answerList[i] + '</button>' + separacion;
-		}
-		this.sendReply('|raw|<div class="infobox"><h2>' + tour[room.id].question + separacion + '<font color="green"><small>Para votar escribe "/vote OPCION"</small></font></h2><hr />' + pollOptions + '</div>');
-	}
 };
 
 for (var i in cmds) CommandParser.commands[i] = cmds[i];
