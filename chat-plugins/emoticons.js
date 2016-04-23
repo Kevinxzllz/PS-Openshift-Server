@@ -135,7 +135,7 @@ function create_table() {
 		}
 	}
 
-	return "<div class='infobox'><div class = 'broadcast-blue'><center><b><u>Lista de caritas</u></b></center>" + "<div class='infobox-limited'><table cellspacing='0' cellpadding='5' width='100%'>" + "<tbody>" + emotes_group_list.join("") + "</tbody>" + "</table></div></div>";
+	return "<div class='infobox'><div class = 'broadcast-blue'><center><b><u>Lista de Emoticons</u></b></center>" + "<div class='infobox-limited'><table cellspacing='0' cellpadding='5' width='100%'>" + "<tbody>" + emotes_group_list.join("") + "</tbody>" + "</table></div></div>";
 }
 
 var emotes_table = create_table();
@@ -161,7 +161,6 @@ exports.commands = {
 	},
 	unblockemoticonshelp: ["/unblockemoticons - Unblocks emoticons in private messages. Block them with /blockemoticons."],
 
-    caritas: 'emoticons',
 	emotes: 'emoticons',
 	emoticons: function (target, room, user) {
 		if (!this.canBroadcast()) return;
