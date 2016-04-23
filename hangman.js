@@ -155,7 +155,7 @@ var cmds = {
 					hangman.reset(room.id);
 					return this.add('|html|<b>' + user.name + '</b> intentó la letra \'' + lettertarget + '\', pero no esta en la palabra. Han fallado en adivinar la palabra por lo que el hombre fue ahorcado.');
 				}
-			this.add('|html|<b>' + user.name + '</b> guessed the letter \'' + lettertarget + '\', pero no estaba en la palabra.');
+			this.add('|html|<b>' + user.name + '</b> intento adivinar la letra \'' + lettertarget + '\', pero no estaba en la palabra.');
 		}
 		else {
 			this.add('|html|<b>' + user.name + '</b> adivinó la letra \'' + lettertarget + '\', que era la letra(s) ' + letterright.toString() + ' de la palabra');
