@@ -9,6 +9,7 @@ var color = require('../config/color');
 exports.parseEmoticons = parseEmoticons;
 
 var emotes = {
+	'(ditto)': 'https://cdn.betterttv.net/emote/554da1a289d53f2d12781907/2x',
 	'#freewolf': 'http://i.imgur.com/ybxWXiG.png',
 	'feelsbd': 'http://i.imgur.com/YyEdmwX.png',
 	'feelsbm': 'http://i.imgur.com/xwfJb2z.png',
@@ -39,7 +40,6 @@ var emotes = {
 	'xaa': 'http://i.imgur.com/V728AvL.png',
 	'yayface': 'http://i.imgur.com/anY1jf8.png',
 	'yesface': 'http://i.imgur.com/k9YCF6K.png'
-	
 };
 
 var emotesKeys = Object.keys(emotes);

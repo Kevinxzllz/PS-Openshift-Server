@@ -35,7 +35,7 @@ var cmds = {
 	hangmanhelp: function(target, room, user) {
 		if (!this.canBroadcast()) return;
 		this.sendReplyBox('<font align="left">Guia de Comandos para el Hangman.' +
-						'<ul><li>/hangman [palabra], [descripción] - Inicia el juego de hangman con la palabra especificada sobre un tema en específico Requiere: + % @ & ~</li>' +
+						'<ul><li>/hangman [palabra], [pista] - Inicia el juego de hangman con la palabra especificada sobre un tema en específico Requiere: + % @ & ~</li>' +
 						'<li>/guess [letter] - Adivina una letra.</li>' +
 						'<li>/guessword [word] - Adivina una palabra.</li>' +
 						'<li>/viewhangman - Muestra el estado actual del juego. Puede ser voceado.</li>' +
@@ -61,7 +61,7 @@ var cmds = {
 			return this.sendReply('Hay un juego de hangman en curso');
 		}
 		if(!target) {
-			return this.sendReply('La forma correcta del comando es /hangman [palabra], [descripción].');
+			return this.sendReply('La forma correcta del comando es /hangman [palabra], [pista].');
 		}
 		if(room.type === 'battle') {
 			return this.sendReply('You cannot start this in a battle room.');
@@ -69,7 +69,7 @@ var cmds = {
 		if(hangman[room.id].hangman === false) {
 			var targets = target.split(',');
 			if(!targets[1]) {
-				return this.sendReply('Asegurate de incluir la descripción');
+				return this.sendReply('Asegurate de incluir la pista');
 			}
 			if(targets[0].length > 10) {
 				return this.sendReply('Como solo se permite intentar en 8 ocasiones, la palabra no puede ser mayor a 10 letras.')
@@ -87,7 +87,7 @@ var cmds = {
 				hangman[room.id].spaces.push('_');
 				hangman[room.id].hangmantopic[0] = targets[1];
 			}
-			return this.add('|html|<div class = "infobox"><div class = "broadcast-blue"><center><font size = 2><b>' + user.name + '</b> ha iniciado un juego de ahorcado. La palabra tiene ' + targets[0].length + ' letras.<br>' + hangman[room.id].spaces.join(" ") + '<br>La categoría: ' + hangman[room.id].hangmantopic[0] + '</font></center></div></div>');
+			return this.add('|html|<div class = "infobox"><div class = "broadcast-blue"><center><font size = 2><b>' + user.name + '</b> ha iniciado un juego de ahorcado. La palabra tiene ' + targets[0].length + ' letras.<br>' + hangman[room.id].spaces.join(" ") + '<br>Pista: ' + hangman[room.id].hangmantopic[0] + '</font></center></div></div>');
 		}
 	},
 
