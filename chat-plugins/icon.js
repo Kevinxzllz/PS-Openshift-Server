@@ -16,11 +16,11 @@ exports.commands = {
         var args = target.split(',');if (args.length < 3) return this.parse('/help seticon');
         var username = toId(args.shift());
         var image = 'background: rgba(244, 244, 244, 0.8) url("' + args.shift().trim() + '") right no-repeat;';
-        selectors = '\n\n' + '  #' + toId(args.shift()) + '-userlist-user-' + username;
+        selectors = '#' + toId(args.shift()) + '-userlist-user-' + username;
         args.forEach(function (room) {
             selectors += ', #' + toId(room) + '-userlist-user-' + username;
         });
-        selectors += ' { \n' + '    ' + image +  '\n  }';
+        selectors += '{' + '' + image +  '}';
 
         this.privateModCommand("(" + user.name + " le ha establecido un icono a " + username + ")");
         writeIconCSS();
