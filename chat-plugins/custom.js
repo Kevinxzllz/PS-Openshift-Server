@@ -50,7 +50,7 @@ exports.commands = {
 		var fsscript = require('fs');
 		if (!target) {
 			if (!fsscript.existsSync(DATA_DIR + "custom.css")) return this.sendReply("custom.css no existe.");
-			return this.sendReplyBox(fsscript.readFileSync(DATA_DIR + "custom.css").toString());
+			return this.sendReply("|raw|<div class=\"infobox\"><div class=\"infobox-limited\">" + fsscript.readFileSync(DATA_DIR + "custom.css").toString() + "</div></div>");
 		}
 		fsscript.writeFileSync(DATA_DIR + "custom.css", target.toString());
 		this.sendReply("custom.css editado correctamente.");
